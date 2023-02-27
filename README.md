@@ -178,7 +178,7 @@
 * 2.lombok插件安装
 <br />&emsp;idea File->setting->plugins->Marketplace 搜索 lombok ->install->Apply->OK->重启idea。
 * 3.第三方包支持 
-<br />&emsp;/lib目录下的两个aspose-cells-18.6.jar、aspose-words-18.6-jdk16.jar放到本地maven仓库com.aspose包下。
+<br />&emsp;/lib目录下的aspose-cells-18.6.jar、aspose-words-18.6-jdk16.jar放到本地maven仓库com.aspose包下。
 * 4.数据库安装配置
 <br />&emsp;安装Postgresql数据库，新建数据库，编码模式UTF-8。
 * 5.初始化数据库
