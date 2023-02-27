@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.highgo.opendbt.exam.mapper.TScoreMapper">
+
+    <resultMap id="BaseResultMap" type="com.highgo.opendbt.exam.domain.entity.TScore">
+            <id property="id" column="id" jdbcType="INTEGER"/>
+            <result property="exerciseId" column="exercise_id" jdbcType="INTEGER"/>
+            <result property="userId" column="user_id" jdbcType="INTEGER"/>
+            <result property="createTime" column="create_time" jdbcType="VARCHAR"/>
+            <result property="usageTime" column="usage_time" jdbcType="VARCHAR"/>
+            <result property="answer" column="answer" jdbcType="VARCHAR"/>
+            <result property="score" column="score" jdbcType="INTEGER"/>
+            <result property="classId" column="class_id" jdbcType="INTEGER"/>
+            <result property="answerExecuteTime" column="answer_execute_time" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,exercise_id,user_id,
+        create_time,usage_time,answer,
+        score,class_id,answer_execute_time
+    </sql>
+</mapper>

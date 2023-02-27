@@ -1,0 +1,386 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.highgo.opendbt.exercise.mapper.TNewExerciseMapper">
+
+    <resultMap id="BaseResultMap" type="com.highgo.opendbt.exercise.domain.entity.TNewExercise">
+        <id property="id" column="id" jdbcType="INTEGER"/>
+        <result property="courseId" column="course_id" jdbcType="INTEGER"/>
+        <result property="parentId" column="parent_id" jdbcType="INTEGER"/>
+        <result property="sceneId" column="scene_id" jdbcType="INTEGER"/>
+        <result property="sceneName" column="scene_name" jdbcType="VARCHAR"/>
+        <result property="elementType" column="element_type" jdbcType="INTEGER"/>
+        <result property="exerciseName" column="exercise_name" jdbcType="VARCHAR"/>
+        <result property="exerciseDesc" column="exercise_desc" jdbcType="VARCHAR"/>
+        <result property="authType" column="auth_type" jdbcType="INTEGER"/>
+        <result property="exerciseType" column="exercise_type" jdbcType="INTEGER"/>
+        <result property="exerciseLevel" column="exercise_level" jdbcType="INTEGER"/>
+        <result property="sortNum" column="sort_num" jdbcType="INTEGER"/>
+        <result property="stem" column="stem" jdbcType="VARCHAR"/>
+        <result property="standardAnswser" column="standard_answser" jdbcType="VARCHAR"/>
+        <result property="answer" column="answer" jdbcType="VARCHAR"/>
+        <result property="exerciseAnalysis" column="exercise_analysis" jdbcType="VARCHAR"/>
+        <result property="createUser" column="create_user" jdbcType="INTEGER"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="updateUser" column="update_user" jdbcType="INTEGER"/>
+        <result property="deleteFlag" column="delete_flag" jdbcType="INTEGER"/>
+        <result property="deleteTime" column="delete_time" jdbcType="TIMESTAMP"/>
+        <result property="deleteUser" column="delete_user" jdbcType="INTEGER"/>
+        <association property="childrens"
+                     select="com.highgo.opendbt.exercise.mapper.TNewExerciseMapper.getExerciseCatalogueTreeChildren"
+                     column="id"/>
+    </resultMap>
+    <resultMap id="exerciseInfoResultMap" type="com.highgo.opendbt.exercise.domain.entity.TNewExercise">
+        <id property="id" column="id" jdbcType="INTEGER"/>
+        <result property="courseId" column="course_id" jdbcType="INTEGER"/>
+        <result property="parentId" column="parent_id" jdbcType="INTEGER"/>
+        <result property="sceneId" column="scene_id" jdbcType="INTEGER"/>
+        <result property="sceneName" column="scene_name" jdbcType="VARCHAR"/>
+        <result property="elementType" column="element_type" jdbcType="INTEGER"/>
+        <result property="exerciseName" column="exercise_name" jdbcType="VARCHAR"/>
+        <result property="exerciseDesc" column="exercise_desc" jdbcType="VARCHAR"/>
+        <result property="authType" column="auth_type" jdbcType="INTEGER"/>
+        <result property="exerciseType" column="exercise_type" jdbcType="INTEGER"/>
+        <result property="exerciseLevel" column="exercise_level" jdbcType="INTEGER"/>
+        <result property="sortNum" column="sort_num" jdbcType="INTEGER"/>
+        <result property="stem" column="stem" jdbcType="VARCHAR"/>
+        <result property="standardAnswser" column="standard_answser" jdbcType="VARCHAR"/>
+        <result property="answer" column="answer" jdbcType="VARCHAR"/>
+        <result property="exerciseAnalysis" column="exercise_analysis" jdbcType="VARCHAR"/>
+        <result property="createUser" column="create_user" jdbcType="INTEGER"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="updateUser" column="update_user" jdbcType="INTEGER"/>
+        <result property="deleteFlag" column="delete_flag" jdbcType="INTEGER"/>
+        <result property="deleteTime" column="delete_time" jdbcType="TIMESTAMP"/>
+        <result property="deleteUser" column="delete_user" jdbcType="INTEGER"/>
+        <collection property="exerciseInfos" ofType="com.highgo.opendbt.exercise.domain.entity.TExerciseInfo"
+                    select="com.highgo.opendbt.exercise.mapper.TExerciseInfoMapper.getExerciseInfo" column="id"/>
+        <collection property="knowledges" ofType="com.highgo.opendbt.course.domain.entity.Knowledge"
+                    select="com.highgo.opendbt.course.mapper.KnowledgeMapper.getKnowledgeByNewExerciseId" column="id"/>
+    </resultMap>
+    <resultMap id="exercisesResultMap" type="com.highgo.opendbt.exercise.domain.entity.TNewExercise">
+        <id property="id" column="id" jdbcType="INTEGER"/>
+        <result property="courseId" column="course_id" jdbcType="INTEGER"/>
+        <result property="parentId" column="parent_id" jdbcType="INTEGER"/>
+        <result property="sceneId" column="scene_id" jdbcType="INTEGER"/>
+        <result property="sceneName" column="scene_name" jdbcType="VARCHAR"/>
+        <result property="elementType" column="element_type" jdbcType="INTEGER"/>
+        <result property="exerciseName" column="exercise_name" jdbcType="VARCHAR"/>
+        <result property="exerciseDesc" column="exercise_desc" jdbcType="VARCHAR"/>
+        <result property="exerciseScore" column="exercise_score" jdbcType="DOUBLE"/>
+        <result property="exerciseOrder" column="exercise_order" jdbcType="INTEGER"/>
+        <result property="authType" column="auth_type" jdbcType="INTEGER"/>
+        <result property="exerciseType" column="exercise_type" jdbcType="INTEGER"/>
+        <result property="exerciseLevel" column="exercise_level" jdbcType="INTEGER"/>
+        <result property="sortNum" column="sort_num" jdbcType="INTEGER"/>
+        <result property="stem" column="stem" jdbcType="VARCHAR"/>
+        <result property="standardAnswser" column="standard_answser" jdbcType="VARCHAR"/>
+        <result property="answer" column="answer" jdbcType="VARCHAR"/>
+        <result property="exerciseAnalysis" column="exercise_analysis" jdbcType="VARCHAR"/>
+        <result property="createUser" column="create_user" jdbcType="INTEGER"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="updateUser" column="update_user" jdbcType="INTEGER"/>
+        <result property="deleteFlag" column="delete_flag" jdbcType="INTEGER"/>
+        <result property="deleteTime" column="delete_time" jdbcType="TIMESTAMP"/>
+        <result property="deleteUser" column="delete_user" jdbcType="INTEGER"/>
+        <collection property="exerciseInfos" ofType="com.highgo.opendbt.exercise.domain.entity.TExerciseInfo"
+                    select="com.highgo.opendbt.exercise.mapper.TExerciseInfoMapper.getExerciseInfo" column="id"/>
+        <collection property="knowledges" ofType="com.highgo.opendbt.course.domain.entity.Knowledge"
+                    select="com.highgo.opendbt.course.mapper.KnowledgeMapper.getKnowledgeByNewExerciseId" column="id"/>
+    </resultMap>
+    <resultMap id="getExerciseByIdResultMap" type="com.highgo.opendbt.homeworkmodel.domain.model.NewExerciseDTO">
+        <id property="id" column="id" jdbcType="INTEGER"/>
+        <result property="courseId" column="course_id" jdbcType="INTEGER"/>
+        <result property="sceneId" column="scene_id" jdbcType="INTEGER"/>
+        <result property="sceneName" column="scene_name" jdbcType="VARCHAR"/>
+        <result property="exerciseName" column="exercise_name" jdbcType="VARCHAR"/>
+        <result property="exerciseType" column="exercise_type" jdbcType="VARCHAR"/>
+        <result property="exerciseLevel" column="exercise_level" jdbcType="INTEGER"/>
+        <result property="stem" column="stem" jdbcType="VARCHAR"/>
+        <result property="standardAnswser" column="standard_answser" jdbcType="VARCHAR"/>
+        <result property="exerciseAnalysis" column="exercise_analysis" jdbcType="VARCHAR"/>
+        <association property="scene" javaType="com.highgo.opendbt.course.domain.model.Scene">
+            <id column="id" property="sceneId" jdbcType="INTEGER"/>
+            <result column="course_id" property="courseId" jdbcType="INTEGER"/>
+            <result column="scene_name" property="sceneName" jdbcType="VARCHAR"/>
+            <result column="scene_desc" property="sceneDesc" jdbcType="VARCHAR"/>
+            <result column="init_shell" property="initShell" jdbcType="VARCHAR"/>
+        </association>
+        <collection property="exerciseInfos" ofType="com.highgo.opendbt.exercise.domain.entity.TExerciseInfo"
+                    select="com.highgo.opendbt.exercise.mapper.TExerciseInfoMapper.getExerciseInfo" column="id"/>
+        <collection property="knowledges" ofType="com.highgo.opendbt.course.domain.entity.Knowledge"
+                    select="com.highgo.opendbt.course.mapper.KnowledgeMapper.getKnowledgeByNewExerciseId" column="id"/>
+    </resultMap>
+    <resultMap id="exerciseExportResultMap" type="com.highgo.opendbt.exercise.domain.model.TNewExerciseExcel">
+        <id property="id" column="id" jdbcType="INTEGER"/>
+        <result property="parentId" column="parent_id" jdbcType="INTEGER"/>
+        <result property="sceneName" column="cjname" jdbcType="VARCHAR"/>
+        <result property="elementType" column="element_type" jdbcType="INTEGER"/>
+        <result property="exerciseName" column="exercise_name" jdbcType="VARCHAR"/>
+        <result property="exerciseType" column="exercise_type" jdbcType="INTEGER"/>
+        <result property="exerciseLevel" column="exercise_level" jdbcType="INTEGER"/>
+        <result property="stem" column="stem" jdbcType="VARCHAR"/>
+        <result property="standardAnswser" column="standard_answser" jdbcType="VARCHAR"/>
+        <result property="exerciseAnalysis" column="exercise_analysis" jdbcType="VARCHAR"/>
+        <result property="createUser" column="user_name" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <collection property="exerciseInfos" ofType="com.highgo.opendbt.exercise.domain.entity.TExerciseInfo"
+                    select="com.highgo.opendbt.exercise.mapper.TExerciseInfoMapper.getExerciseInfoExcel" column="id"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        id,course_id,parent_id,sort_num,
+        scene_id,scene_name,element_type,
+        exercise_name,exercise_desc,auth_type,
+        exercise_type,exercise_level,stem,
+        standard_answser,answer,exercise_analysis,
+        create_user,create_time,update_time,
+        update_user,delete_flag,delete_time,
+        delete_user
+    </sql>
+    <select id="listExercises" resultType="com.highgo.opendbt.exercise.domain.entity.TNewExercise">
+        select t.* from(select
+        e.*,
+        u.user_name
+        from
+        t_new_exercise e
+        left join t_sys_user u on e.create_user=u.id
+        where
+        e.course_id in
+        <foreach collection="param.courseIdList" close=")" open="(" item="item" separator=",">
+            '${item}'
+        </foreach>
+        and e.element_type = 1
+        and e.delete_flag = 0
+        and e.parent_id = #{param.parentId}
+        union all
+        select
+        e1.*,
+        u.user_name
+        from
+        t_new_exercise e1
+        left join t_sys_user u on e1.create_user=u.id
+        where
+        e1.course_id in
+        <foreach collection="param.courseIdList" close=")" open="(" item="item" separator=",">
+            '${item}'
+        </foreach>
+
+        <if test="param.exerciseTypeList != null and param.exerciseTypeList.size() > 0 ">
+            and e1.exercise_type in
+            <foreach collection="param.exerciseTypeList" close=")" open="(" item="item" separator=",">
+                '${item}'
+            </foreach>
+        </if>
+
+        <if test="param.exerciseName!=null and param.exerciseName!=''">
+            and e1.exercise_name like '%${param.exerciseName}%'
+        </if>
+        and e1.parent_id= #{param.parentId}
+        and e1.delete_flag = 0
+        and e1.element_type = 0
+        <if test="param.knowledge!=null and param.knowledge!=''">
+            and e1.id in(
+            select b.exercise_id from t_course_knowledge a join t_exercise_knowledge b on a.id=b.knowledge_id where
+            a.course_id in
+            <foreach collection="param.courseIdList" close=")" open="(" item="item" separator=",">
+                '${item}'
+            </foreach>
+            and a.name like '%${param.knowledge}%'
+            )
+        </if>
+        ) as t
+    </select>
+
+    <select id="selectExerciseCount" resultType="int">
+        WITH RECURSIVE T AS(
+        SELECT id,parent_id,course_id,delete_flag,element_type,exercise_name,exercise_type FROM t_new_exercise where
+        id=#{exercise.id}
+        UNION ALL
+        SELECT T1.id,T1.parent_id,T1.course_id,T1.delete_flag,T1.element_type,T1.exercise_name,T1.exercise_type
+        FROM t_new_exercise T1 JOIN T ON T1.parent_id=T.ID
+        and T1.course_id =#{exercise.courseId}
+        and T1.delete_flag = 0
+        )
+        select count(id) as child_count FROM T where 1=1
+        and T.element_type=0
+        <if test="param.exerciseName!=null and param.exerciseName!=''">
+            and T.exercise_name like '%${param.exerciseName}%'
+        </if>
+
+        <if test="param.exerciseTypeList != null and param.exerciseTypeList.size() > 0 ">
+            and T.exercise_type in
+            <foreach collection="param.exerciseTypeList" close=")" open="(" item="item" separator=",">
+                '${item}'
+            </foreach>
+        </if>
+        <if test="param.knowledge!=null and param.knowledge!=''">
+            and T.id in(
+            select b.exercise_id from t_course_knowledge a join t_exercise_knowledge b on a.id=b.knowledge_id where
+            a.course_id in
+            <foreach collection="param.courseIdList" close=")" open="(" item="item" separator=",">
+                '${item}'
+            </foreach>
+            and a.name like '%${param.knowledge}%'
+            )
+        </if>
+    </select>
+
+
+    <select id="countExercises" resultType="java.lang.Integer">
+        select
+        count(*)
+        from
+        (
+        select
+        *
+        from
+        t_new_exercise e
+        where
+        e.course_id in
+        <foreach collection="param.courseIdList" close=")" open="(" item="item" separator=",">
+            '${item}'
+        </foreach>
+
+        <if test="param.exerciseTypeList != null and param.exerciseTypeList.size() > 0 ">
+            and e.exercise_type in
+            <foreach collection="param.exerciseTypeList" close=")" open="(" item="item" separator=",">
+                '${item}'
+            </foreach>
+            and knowledge_id in
+            <foreach collection="param.knowledgeIdList" close=")" open="(" item="item" separator=",">
+                '${item}'
+            </foreach>
+        </if>
+        and e.parent_id= #{param.parentId}
+        and e.delete_flag = 0
+        ) A
+        inner join (
+        select
+        k.exercise_id,
+        count(*)
+        from
+        t_exercise_knowledge k
+        where
+        course_id in
+        <foreach collection="param.courseIdList" close=")" open="(" item="item" separator=",">
+            '${item}'
+        </foreach>
+        group by
+        k.exercise_id
+        ) B on
+        A.id = B.exercise_id
+    </select>
+    <select id="listExercisesNoKnowledge" resultType="com.highgo.opendbt.exercise.domain.entity.TNewExercise">
+        select T.* from ( select
+        <include refid="Base_Column_List"/>
+        from t_new_exercise A
+        where A.element_type=0
+        and A.parent_id=#{param.parentId}
+
+        <if test="param.exerciseTypeList != null and param.exerciseTypeList.size() > 0 ">
+            and A.exercise_type in
+            <foreach collection="param.exerciseTypeList" close=")" open="(" item="item" separator=",">
+                '${item}'
+            </foreach>
+        </if>
+
+        <if test="param.courseIdList != null and param.courseIdList.size() > 0 ">
+            and A.course_id in
+            <foreach collection="param.courseIdList" close=")" open="(" item="item" separator=",">
+                '${item}'
+            </foreach>
+        </if>
+        union all
+        select
+        <include refid="Base_Column_List"/>
+        from t_new_exercise B
+        where B.element_type=1
+        and B.parent_id=#{param.parentId}
+        <if test="param.courseIdList != null and param.courseIdList.size() > 0 ">
+            and B.course_id in
+            <foreach collection="param.courseIdList" close=")" open="(" item="item" separator=",">
+                '${item}'
+            </foreach>
+        </if>
+        ) T
+
+    </select>
+
+    <select id="getExerciseCatalogueTree" resultMap="BaseResultMap">
+        select * from t_new_exercise where element_type=1 and parent_id=0 and delete_flag=0
+        <if test="param.courseIdList != null and param.courseIdList.size() > 0 ">
+            and course_id in
+            <foreach collection="param.courseIdList" close=")" open="(" item="item" separator=",">
+                '${item}'
+            </foreach>
+        </if>
+    </select>
+    <select id="getExerciseCatalogueTreeChildren" resultMap="BaseResultMap">
+    select * from t_new_exercise where element_type=1 and parent_id=#{parentId}
+    </select>
+
+    <select id="getExercise" resultMap="exerciseInfoResultMap">
+        select * from t_new_exercise  where id=#{exerciseId} and delete_flag=0
+    </select>
+
+    <select id="getExercises" resultType="com.highgo.opendbt.exercise.domain.entity.TNewExercise">
+        select e.id,e.course_id,e.element_type,e.exercise_name,e.exercise_type,m.exercise_score,m.exercise_order from
+        t_new_exercise e left join t_model_exercise m on e.id=m.exercise_id where m.model_id= #{modelId}
+        and e.id in
+        <foreach collection="param" close=")" open="(" item="item" separator=",">
+            '${item}'
+        </foreach>
+        and e.delete_flag=0
+        and m.delete_flag=0
+        order by m.exercise_order asc
+    </select>
+    <select id="getExercisesDetail" resultMap="exercisesResultMap">
+        select
+        e.id,e.stem,e.exercise_level,e.element_type,e.exercise_name,e.exercise_type,e.standard_answser,e.exercise_analysis,m.exercise_score,m.exercise_order
+        from t_new_exercise e left join t_model_exercise m on e.id=m.exercise_id where m.model_id= #{modelId}
+        and e.id in
+        <foreach collection="param" close=")" open="(" item="item" separator=",">
+            '${item}'
+        </foreach>
+        and e.delete_flag=0
+        and m.delete_flag=0
+        order by m.exercise_order asc
+    </select>
+    <select id="getExerciseById" resultMap="getExerciseByIdResultMap">
+        select e.id,e.course_id,e.scene_id,e.scene_name,e.exercise_name,e.exercise_level,e.stem,e.standard_answser,e.exercise_analysis,
+        m.exercise_score,t.type_name as exercise_type,
+        t_scene.*
+        from t_new_exercise e left join t_scene on t_scene.id = e.scene_id left join t_model_exercise m on e.id=m.exercise_id
+         left join t_exercise_type t on e.exercise_type=t.type_code
+         where m.model_id= #{modelId}
+        and e.id =#{exerciseId}
+        and e.delete_flag=0
+        and m.delete_flag=0
+    </select>
+
+    <select id="getExerciseByIdUnAnswer" resultMap="getExerciseByIdResultMap">
+        select e.id,e.course_id,e.scene_id,e.scene_name,e.exercise_name,e.exercise_level,e.stem,
+        m.exercise_score,t.type_name as exercise_type ,
+         t_scene.*
+        from t_new_exercise e  left join t_scene on t_scene.id = e.scene_id
+        left join t_model_exercise m on e.id=m.exercise_id
+         left join t_exercise_type t on e.exercise_type=t.type_code
+         where m.model_id= #{modelId}
+        and e.id =#{exerciseId}
+        and e.delete_flag=0
+        and m.delete_flag=0
+    </select>
+
+    <select id="getExerciseByCourse" resultMap="exerciseExportResultMap">
+        select e.*,s.scene_name as cjname,u.user_name from t_new_exercise e left join t_scene s on e.scene_id=s.id  left join t_sys_user u on e.create_user=u.id where e.course_id=#{courseId} and e.delete_flag=0 order by e.element_type desc,e.create_time desc
+    </select>
+
+    <select id="findExerciseScoreInfos" resultType="int">
+        select id from t_score  s  where s.user_id=#{userId} and s.exercise_id in (select exercise_id from t_new_exercise e where e.delete_flag=0 and course_id=#{courseId})
+    </select>
+
+</mapper>

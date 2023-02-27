@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.highgo.opendbt.publicLibrary.mapper.PublicSceneDetailMapper">
+
+	<resultMap id="BaseResultMap" type="com.highgo.opendbt.publicLibrary.model.PublicSceneDetail">
+		<id column="id" property="sceneDetailId" jdbcType="INTEGER" />
+		<result column="scene_id" property="sceneId" jdbcType="INTEGER" />
+		<result column="table_name" property="tableName" jdbcType="VARCHAR" />
+		<result column="table_detail" property="tableDetail" jdbcType="VARCHAR" />
+		<result column="table_desc" property="tableDesc" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<select id="getSceneDetailById" resultMap="BaseResultMap">
+		select
+			t_public_scene_detail.id,
+			t_public_scene_detail.scene_id,
+			t_public_scene_detail.table_name,
+			t_public_scene_detail.table_detail,
+			t_public_scene_detail.table_desc
+		from t_public_scene_detail
+		where t_public_scene_detail.scene_id = #{sceneId}
+		order by t_public_scene_detail.scene_id, t_public_scene_detail.id
+	</select>
+
+	<insert id="addSceneDetail">
+		insert into t_public_scene_detail
+			(scene_id, table_name, table_detail, table_desc)
+		values
+		<foreach collection="sceneDetailList" item="item" index="index" separator=",">
+			(#{sceneId}, #{item.tableName}, #{item.tableDetail}, #{item.tableDesc})
+		</foreach>
+	</insert>
+
+	<delete id="deleteSceneDetail">
+		delete from t_public_scene_detail where scene_id = #{sceneId}
+	</delete>
+
+</mapper>

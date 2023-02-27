@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.highgo.opendbt.login.mapper.NoticesMapper">
+
+	<resultMap id="BaseResultMap" type="com.highgo.opendbt.login.model.Notice">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="user_id" property="userId" jdbcType="INTEGER" />
+		<result column="user_name" property="userName" jdbcType="VARCHAR" />
+		<result column="avatar" property="avatar" jdbcType="VARCHAR" />
+		<result column="create_time" property="createTime" jdbcType="VARCHAR" />
+		<result column="notice_content" property="noticeContent" jdbcType="VARCHAR" />
+		<result column="role_type" property="roleType" jdbcType="INTEGER" />
+		<result column="is_read" property="read" jdbcType="BIT" />
+	</resultMap>
+
+	<select id="getNotice" resultMap="BaseResultMap">
+		select
+			t.id,
+			t.user_id,
+			t.user_name,
+			t.avatar,
+			t.create_time,
+			t.notice_content,
+			t.role_type,
+			t.is_read
+		from
+			((select
+				t_notice.id,
+				t_notice.user_id,
+				t_sys_user.user_name,
+				t_sys_user.avatar,
+				t_notice.create_time,
+				t_notice.notice_content,
+				t_notice.role_type,
+				false as is_read
+			from t_notice
+			left join t_sys_user on t_sys_user.id = t_notice.user_id
+			where t_notice.id not in (select t_notice_user.notice_id from t_notice_user where t_notice_user.user_id=#{userId}))
+			union all
+			(select
+				t_notice.id,
+				t_notice.user_id,
+				t_sys_user.user_name,
+				t_sys_user.avatar,
+				t_notice.create_time,
+				t_notice.notice_content,
+				t_notice.role_type,
+				true as is_read
+			from t_notice
+			left join t_sys_user on t_sys_user.id = t_notice.user_id
+			where t_notice.id in (select t_notice_user.notice_id from t_notice_user where t_notice_user.user_id=#{userId}))) as t
+		order by t.id desc
+	</select>
+
+	<select id="getNoticeNotRead" resultMap="BaseResultMap">
+		select
+			t_notice.id,
+			t_notice.user_id,
+			t_sys_user.user_name,
+			t_sys_user.avatar,
+			t_notice.create_time,
+			t_notice.notice_content,
+			t_notice.role_type
+		from t_notice
+		left join t_sys_user on t_sys_user.id = t_notice.user_id
+		where t_notice.id not in (select t_notice_user.notice_id from t_notice_user where t_notice_user.user_id=#{userId})
+		order by t_notice.id desc
+	</select>
+
+	<insert id="addNotice">
+		insert into t_notice
+			(user_id, create_time, notice_content, role_type)
+		values
+			(#{userId}, to_timestamp(#{createTime}, 'yyyy-MM-DD hh24:mi:ss'), #{noticeContent}, #{roleType})
+	</insert>
+
+	<insert id="changeNoticeRead">
+		insert into t_notice_user(user_id, notice_id) values(#{userId}, #{noticeId})
+	</insert>
+
+	<insert id="clearNotReadNotice">
+		insert into t_notice_user
+			(user_id, notice_id)
+		values
+		<foreach collection="list" item="item" index="index" separator=",">
+			(#{userId}, #{item.id})
+		</foreach>
+	</insert>
+
+</mapper>

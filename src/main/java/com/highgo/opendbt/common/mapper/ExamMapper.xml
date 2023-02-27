@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.highgo.opendbt.teacher.mapper.ExamMapper">
+
+	<resultMap id="BaseResultMap" type="com.highgo.opendbt.teacher.domain.model.Exam">
+		<id column="exam_class_id" property="examClassId" jdbcType="INTEGER" />
+		<result column="id" property="id" jdbcType="INTEGER" />
+		<result column="course_id" property="courseId" jdbcType="INTEGER" />
+		<result column="test_name" property="testName" jdbcType="VARCHAR" />
+		<result column="test_desc" property="testDesc" jdbcType="VARCHAR" />
+		<result column="creator" property="creator" jdbcType="INTEGER" />
+		<result column="exercise_source" property="exerciseSource" jdbcType="INTEGER" />
+		<result column="exercise_count" property="exerciseCount" jdbcType="INTEGER" />
+		<result column="is_end" property="isEnd" jdbcType="INTEGER" />
+		<result column="test_start" property="testStart" jdbcType="VARCHAR" />
+		<result column="test_end" property="testEnd" jdbcType="VARCHAR" />
+
+		<association property="course" javaType="com.highgo.opendbt.course.domain.entity.Course">
+			<id column="course_id" property="courseId" jdbcType="INTEGER" />
+			<result column="course_name" property="courseName" jdbcType="VARCHAR" />
+			<result column="course_desc" property="courseDesc" jdbcType="VARCHAR" />
+			<result column="course_outline" property="courseOutline" jdbcType="VARCHAR" />
+			<result column="creator" property="creator" jdbcType="INTEGER" />
+		</association>
+	</resultMap>
+
+	<sql id="test_column_list">
+		${test}.id,
+		${test}.course_id,
+		${test}.test_name,
+		${test}.test_desc,
+		${test}.creator,
+		${test}.exercise_source
+	</sql>
+
+	<sql id="course_column_list">
+		${tc}.id as course_id,
+		${tc}.course_name,
+		${tc}.course_desc,
+		${tc}.creator
+	</sql>
+
+	<select id="getExamList" resultMap="BaseResultMap">
+		select
+			<include refid="test_column_list">
+				<property name="test" value="test"/>
+			</include>	,
+			<include refid="course_column_list">
+				<property name="tc" value="tc"/>
+			</include>,
+			(case
+				when test.exercise_source = 0 then (select count(1) from t_exercise te left join t_exam_exercise tee on tee.exercise_id = te.id where te.delete_flag = 0 and tee.exam_id = test.id)
+				when test.exercise_source = 1 then (select count(1) from t_public_exercise te left join t_exam_exercise tee on tee.exercise_id = te.id where te.delete_flag = 0 and tee.exam_id = test.id) end
+			) as exercise_count
+		from t_exam test
+		join t_course tc on tc.id = test.course_id
+		where test.creator = #{userId}
+			and test.course_id = #{courseId}
+			and test.delete_flag = 0
+		order by test.id desc
+	</select>
+
+	<select id="getExamListBySclass" resultMap="BaseResultMap">
+		select
+			tec.id as exam_class_id,
+			<include refid="test_column_list">
+				<property name="test" value="test"/>
+			</include>,
+			tec.test_start,
+			tec.test_end,
+			(case
+				when test.exercise_source = 0 then (select count(1) from t_exercise te left join t_exam_exercise tee on tee.exercise_id = te.id where te.delete_flag = 0 and tee.exam_id = test.id)
+				when test.exercise_source = 1 then (select count(1) from t_public_exercise te left join t_exam_exercise tee on tee.exercise_id = te.id where te.delete_flag = 0 and tee.exam_id = test.id) end
+			) as exercise_count,
+			(case
+				when current_timestamp &lt;= tec.test_end::timestamp then 0
+				when current_timestamp &gt; tec.test_end::timestamp then 1 end
+			) as is_end
+		from t_exam test
+		left join t_course tc on tc.id = test.course_id
+		left join t_exam_class tec on tec.exam_id = test.id
+		where tec.class_id = #{sclassId}
+			and tec.course_id = #{courseId}
+			and ((current_timestamp &gt;= tec.test_start::timestamp and tec.test_is_open = true) or test.creator = #{userId})
+			and tec.delete_flag = 0
+		order by is_end, tec.test_end
+	</select>
+
+	<select id="getExamById" resultMap="BaseResultMap">
+		select
+			<include refid="test_column_list">
+				<property name="test" value="test"/>
+			</include>	,
+			<include refid="course_column_list">
+				<property name="tc" value="tc"/>
+			</include>
+		from t_exam test
+		join t_course tc on tc.id = test.course_id
+		where test.id = #{id}
+	</select>
+
+	<insert id="addExam" useGeneratedKeys="true" keyProperty="id">
+		insert into t_exam
+			(course_id, test_name, test_desc, creator, create_time, exercise_source)
+		values
+			(#{courseId}, #{testName}, #{testDesc}, #{creator}, to_timestamp(#{createTime}, 'yyyy-MM-DD hh24:mi:ss'), #{exerciseSource})
+	</insert>
+
+	<update id="updateExam">
+		update t_exam
+		<set>
+			<if test="testName != null">
+	            test_name = #{testName},
+	        </if>
+	        <if test="testDesc != null">
+	            test_desc = #{testDesc},
+	        </if>
+		</set>
+		where id = #{id}
+	</update>
+
+	<update id="deleteExam">
+		update t_exam set delete_flag = 1, delete_time = current_timestamp where id = #{examId}
+	</update>
+
+	<insert id="addExamExerciseArray">
+		insert into t_exam_exercise
+			(exam_id, exercise_id,ordinal)
+		values
+		<foreach collection="exerciseIds" item="item" index="index" separator=",">
+			(#{examId}, #{item},#{orderIndex} + #{index}+1)
+		</foreach>
+	</insert>
+
+	<resultMap id="ClassResultMap" type="com.highgo.opendbt.sclass.domain.entity.Sclass">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="class_name" property="className" jdbcType="VARCHAR" />
+		<result column="class_desc" property="classDesc" jdbcType="VARCHAR" />
+		<result column="class_start" property="classStart" jdbcType="VARCHAR" />
+		<result column="class_end" property="classEnd" jdbcType="VARCHAR" />
+		<result column="course_id" property="courseId" jdbcType="INTEGER" />
+		<result column="creator" property="creator" jdbcType="INTEGER" />
+	</resultMap>
+
+	<select id="getExamClassByExamId" resultMap="ClassResultMap">
+		select * from t_class where id in (
+			select class_id from t_exam_class where exam_id = #{examId}
+		)
+	</select>
+
+	<update id="deleteExamClassByExamId">
+		delete from t_exam_class where exam_id = #{examId}
+	</update>
+
+	<resultMap id="StudentReportCardResultMap" type="com.highgo.opendbt.student.domain.model.StudentReportCard">
+		<id column="id" property="studentId" jdbcType="INTEGER" />
+		<result column="student_name" property="studentName" jdbcType="VARCHAR" />
+		<result column="student_code" property="studentCode" jdbcType="VARCHAR" />
+		<result column="exercise_count" property="exerciseCount" jdbcType="INTEGER" />
+		<result column="answer_exercise_count" property="answerExerciseCount" jdbcType="INTEGER" />
+		<result column="exercise_gross_score" property="exerciseGrossScore" jdbcType="INTEGER" />
+		<result column="student_gross_score" property="studentGrossScore" jdbcType="INTEGER" />
+
+		<result column="exam_name" property="examName" jdbcType="VARCHAR" />
+		<result column="exam_status" property="examStatus" jdbcType="INTEGER" />
+		<result column="exam_start" property="examStart" jdbcType="VARCHAR" />
+		<result column="exam_end" property="examEnd" jdbcType="VARCHAR" />
+
+		<result column="is_finish" property="isFinish" jdbcType="INTEGER" />
+	</resultMap>
+
+	<select id="getExamStudentReportCard" resultMap="StudentReportCardResultMap">
+		select
+		tsu.id,
+		tsu.user_name as student_name,
+		tsu.code as student_code,
+		(
+			select sum(exercise_score) from (select
+			(case when  (select t_exam_score.score from t_exam_score
+				where t_exam_score.exercise_id = te.id
+				and t_exam_score.class_id = #{sclassId}
+				and t_exam_score.user_id = tsu.id
+				and t_exam_score.exam_id = tee.exam_id
+				and t_exam_score.exam_class_id = #{examClassId}
+				order by t_exam_score.create_time desc
+				limit 1
+			) = 100 then tee.score
+			else 0 end
+			) as exercise_score
+			from
+			<if test="exerciseSource == 0">
+				t_exercise te
+		    </if>
+		    <if test="exerciseSource == 1">
+		    	t_public_exercise te
+		    </if>
+			left join t_exam_exercise tee on tee.exercise_id = te.id
+			where te.delete_flag = 0 and tee.exam_id = #{examId}) as a
+		) as student_gross_score,
+		(case
+			when
+			(select count(1) from (
+					select exercise_score from (select
+					(case when  (select t_exam_score.score from t_exam_score
+						where t_exam_score.exercise_id = te.id
+						and t_exam_score.class_id = #{sclassId}
+						and t_exam_score.user_id = tsu.id
+						and t_exam_score.exam_id = tee.exam_id
+						and t_exam_score.exam_class_id = #{examClassId}
+						order by t_exam_score.create_time desc
+						limit 1
+					) is null then -1
+					else 0 end
+					) as exercise_score
+					from
+					<if test="exerciseSource == 0">
+						t_exercise te
+				    </if>
+				    <if test="exerciseSource == 1">
+				    	t_public_exercise te
+				    </if>
+					left join t_exam_exercise tee on tee.exercise_id = te.id
+					where te.delete_flag = 0 and tee.exam_id = #{examId}) as a
+				where a.exercise_score = -1) as b
+			) = 0 then 1
+			else 0 end
+		) as is_finish
+		from t_sys_user tsu
+		where tsu.id not in (select t_class.creator from t_class where t_class.id = #{sclassId})
+		and tsu.id in (select t_class_stu.user_id from t_class_stu where t_class_stu.sclass_id = #{sclassId})
+	</select>
+
+	<select id="getExamDetailByExamClassId" resultMap="StudentReportCardResultMap">
+		select
+			texam.test_name as exam_name,
+			tec.test_start as exam_start,
+			tec.test_end as exam_end,
+			(case
+				when current_timestamp &lt; tec.test_start::timestamp then -1
+				when current_timestamp &gt;= tec.test_start::timestamp and current_timestamp &lt;= tec.test_end::timestamp then 0
+				when current_timestamp &gt; tec.test_end::timestamp then 1 end
+			) as exam_status,
+			(
+				select count(1) from
+				<if test="exerciseSource == 0">
+					t_exercise te
+			    </if>
+			    <if test="exerciseSource == 1">
+			    	t_public_exercise te
+			    </if>
+				left join t_exam_exercise tee on tee.exercise_id = te.id
+				where te.delete_flag = 0 and tee.exam_id = tec.exam_id
+			) as exercise_count,
+			(
+				select sum(score) from (
+					select tee.score from
+					<if test="exerciseSource == 0">
+						t_exercise te
+				    </if>
+				    <if test="exerciseSource == 1">
+				    	t_public_exercise te
+				    </if>
+					left join t_exam_exercise tee on tee.exercise_id = te.id
+					where te.delete_flag = 0 and tee.exam_id = tec.exam_id
+				) as a
+			) as exercise_gross_score
+		from t_exam_class tec
+		join t_exam texam on texam.id = tec.exam_id
+		where tec.id = #{examClassId}
+	</select>
+
+</mapper>

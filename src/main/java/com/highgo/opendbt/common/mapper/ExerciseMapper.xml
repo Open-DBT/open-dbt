@@ -1,0 +1,356 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.highgo.opendbt.course.mapper.ExerciseMapper">
+
+	<resultMap id="BaseResultMap" type="com.highgo.opendbt.course.domain.entity.Exercise">
+		<id column="id" property="exerciseId" jdbcType="INTEGER" />
+		<result column="course_id" property="courseId" jdbcType="INTEGER" />
+		<result column="course_name" property="courseName" jdbcType="VARCHAR" />
+		<result column="scene_id" property="sceneId" jdbcType="INTEGER" />
+		<result column="scene_name" property="sceneName" jdbcType="VARCHAR" />
+		<result column="exercise_name" property="exerciseName" jdbcType="VARCHAR" />
+		<result column="exercise_desc" property="exerciseDesc" jdbcType="VARCHAR" />
+		<result column="answer" property="answer" jdbcType="VARCHAR" />
+
+		<result column="stu_answer" property="stuAnswer" jdbcType="VARCHAR" />
+		<result column="score" property="score" jdbcType="VARCHAR" />
+		<result column="ct" property="ct" jdbcType="VARCHAR" />
+
+		<association property="scene" javaType="com.highgo.opendbt.course.domain.model.Scene">
+			<id column="id" property="sceneId" jdbcType="INTEGER" />
+			<result column="course_id" property="courseId" jdbcType="INTEGER" />
+			<result column="scene_name" property="sceneName" jdbcType="VARCHAR" />
+			<result column="scene_desc" property="sceneDesc" jdbcType="VARCHAR" />
+			<result column="init_shell" property="initShell" jdbcType="VARCHAR" />
+		</association>
+	</resultMap>
+	<resultMap id="ExerciseInfosResultMap" type="com.highgo.opendbt.course.domain.model.ExerciseDisplay">
+		<id column="id" property="exerciseId" jdbcType="INTEGER" />
+		<result column="course_id" property="courseId" jdbcType="INTEGER" />
+		<result column="course_name" property="courseName" jdbcType="VARCHAR" />
+		<result column="scene_id" property="sceneId" jdbcType="INTEGER" />
+		<result column="scene_name" property="sceneName" jdbcType="VARCHAR" />
+		<result column="exercise_name" property="exerciseName" jdbcType="VARCHAR" />
+		<result column="exercise_desc" property="exerciseDesc" jdbcType="VARCHAR" />
+		<result column="answer" property="answer" jdbcType="VARCHAR" />
+		<result column="stu_answer" property="stuAnswer" jdbcType="VARCHAR" />
+		<result column="score" property="score" jdbcType="VARCHAR" />
+		<result column="ct" property="ct" jdbcType="VARCHAR" />
+
+		<result column="standard_answser" property="standardAnswser" jdbcType="VARCHAR" />
+		<result column="exercise_type" property="exerciseType" jdbcType="INTEGER" />
+		<result column="exercise_analysis" property="exerciseAnalysis" jdbcType="VARCHAR" />
+
+		<association property="scene" javaType="com.highgo.opendbt.course.domain.model.Scene">
+			<id column="id" property="sceneId" jdbcType="INTEGER" />
+			<result column="course_id" property="courseId" jdbcType="INTEGER" />
+			<result column="scene_name" property="sceneName" jdbcType="VARCHAR" />
+			<result column="scene_desc" property="sceneDesc" jdbcType="VARCHAR" />
+			<result column="init_shell" property="initShell" jdbcType="VARCHAR" />
+		</association>
+		<collection property="exerciseInfos" ofType="com.highgo.opendbt.exercise.domain.entity.TExerciseInfo"
+                    select="com.highgo.opendbt.exercise.mapper.TExerciseInfoMapper.getExerciseInfo" column="id"/>
+		<collection property="knowledge" ofType="com.highgo.opendbt.course.domain.entity.Knowledge"
+                    select="com.highgo.opendbt.course.mapper.KnowledgeMapper.getKnowledgeByNewExerciseId" column="id"/>
+	</resultMap>
+	<sql id="exercise_column_list">
+		${te}.id,
+		${te}.course_id,
+		${te}.scene_id,
+		${te}.exercise_name,
+		${te}.exercise_desc,
+		${te}.answer
+	</sql>
+
+	<sql id="scene_column_list">
+		${ts}.id,
+		${ts}.course_id,
+		${ts}.scene_name,
+		${ts}.scene_desc,
+		${ts}.init_shell
+	</sql>
+
+	<sql id="exercise_stu_column_list">
+		${te}.id,
+		${te}.course_id,
+		${te}.scene_id,
+		${te}.exercise_name,
+		${te}.stem as exercise_desc,
+	</sql>
+
+	<select id="getExercise" resultMap="BaseResultMap">
+<!-- 		select tc.course_name, -->
+<!-- 		<include refid="exercise_column_list"> -->
+<!-- 			<property name="te" value="te"/> -->
+<!-- 		</include>, -->
+<!-- 		<include refid="scene_column_list"> -->
+<!-- 			<property name="ts" value="ts"/> -->
+<!-- 		</include>		 -->
+		select te.id,te.course_id,te.scene_id,te.exercise_name,ts.scene_name
+		from t_new_exercise te
+		left join t_course tc on tc.id = te.course_id
+		left join t_scene ts on ts.id = te.scene_id
+		<if test="knowledgeId != null and knowledgeId != -1 and knowledgeId != 0">
+			left join t_exercise_knowledge on t_exercise_knowledge.exercise_id = te.id
+	    </if>
+		where te.course_id = #{courseId} and te.delete_flag = 0
+		<if test="exerciseDesc != null and exerciseDesc != ''">
+	        and (te.exercise_name like '%${exerciseDesc}%' or te.exercise_desc like '%${exerciseDesc}%')
+	        <!-- and te.exercise_desc like '%${exerciseDesc}%' -->
+	    </if>
+	    <if test="sceneId != null and sceneId != -1">
+	        and te.scene_id = #{sceneId}
+	    </if>
+	    <if test="knowledgeId != null and knowledgeId != -1 and knowledgeId != 0">
+			and t_exercise_knowledge.knowledge_id = #{knowledgeId}
+	    </if>
+	    <if test="knowledgeId == 0">
+			and te.id not in (select t_exercise_knowledge.exercise_id from t_exercise_knowledge where t_exercise_knowledge.course_id = #{courseId})
+	    </if>
+		order by te.id desc
+	</select>
+
+	<select id="getExerciseList" resultMap="BaseResultMap">
+		select tc.course_name,
+		<include refid="exercise_column_list">
+			<property name="te" value="te"/>
+		</include>,
+		ts.scene_name
+		<!-- select te.id,te.course_id,te.scene_id,te.exercise_name,ts.scene_name  -->
+		from t_new_exercise te 		left join t_course tc on tc.id = te.course_id
+		left join t_scene ts on ts.id = te.scene_id
+		<if test="knowledgeId != null and knowledgeId != -1 and knowledgeId != 0">
+			left join t_exercise_knowledge on t_exercise_knowledge.exercise_id = te.id
+	    </if>
+		where te.course_id = #{courseId} and te.delete_flag = 0
+		<if test="exerciseDesc != null and exerciseDesc != ''">
+	        and (te.exercise_name like '%${exerciseDesc}%' or te.exercise_desc like '%${exerciseDesc}%')
+	        <!-- and te.exercise_desc like '%${exerciseDesc}%' -->
+	    </if>
+	    <if test="sceneId != null and sceneId != -1">
+	        and te.scene_id = #{sceneId}
+	    </if>
+	    <if test="knowledgeId != null and knowledgeId != -1 and knowledgeId != 0">
+			and t_exercise_knowledge.knowledge_id = #{knowledgeId}
+	    </if>
+	    <if test="knowledgeId == 0">
+			and te.id not in (select t_exercise_knowledge.exercise_id from t_exercise_knowledge where t_exercise_knowledge.course_id = #{courseId})
+	    </if>
+		order by te.id desc
+	</select>
+
+	<select id="getExerciseByCourseId" resultMap="BaseResultMap">
+		select
+		<include refid="exercise_stu_column_list">
+			<property name="te" value="te"/>
+		</include>		<if test="isSelectAnswer != 0">
+			te.answer,
+	    </if>
+		<include refid="scene_column_list">
+			<property name="ts" value="ts"/>
+		</include>
+		from t_new_exercise te,t_scene ts
+		where te.course_id = #{courseId}
+			and te.delete_flag = 0
+			and ts.id = te.scene_id
+	    <choose>
+	        <when test="orderBy == 0">
+	            order by te.id ASC
+	        </when>
+	        <otherwise>
+	            order by te.id DESC
+	        </otherwise>
+	    </choose>
+	</select>
+
+	<select id="getExerciseById" resultMap="BaseResultMap">
+		select
+			t_new_exercise.id,
+			t_new_exercise.course_id,
+			t_new_exercise.scene_id,
+			t_new_exercise.exercise_name,
+			t_new_exercise.stem as exercise_desc,
+			t_new_exercise.answer,
+			t_scene.*
+		from t_new_exercise
+		left join t_scene on t_scene.id = t_new_exercise.scene_id
+		where t_new_exercise.id = #{exerciseId}
+	</select>
+
+	<select id="getPublicExerciseById" resultMap="BaseResultMap">
+		select
+			t_public_exercise.id,
+			t_public_exercise.scene_id,
+			t_public_exercise.exercise_name,
+			t_public_exercise.exercise_desc,
+			t_public_exercise.answer
+		from t_public_exercise
+		where t_public_exercise.id = #{exerciseId}
+	</select>
+
+	<select id="getExerciseBySceneId" resultMap="BaseResultMap">
+		select
+			<include refid="exercise_column_list">
+				<property name="te" value="te"/>
+			</include>
+		from t_new_exercise te
+		where te.scene_id = #{sceneId}
+	</select>
+
+	<select id="getExerciseInfoList" resultMap="BaseResultMap">
+		select
+			t_new_exercise.id,
+			t_new_exercise.course_id,
+			t_course.course_name,
+			t_new_exercise.scene_id,
+			t_new_exercise.exercise_name
+<!-- 			t_exercise.exercise_desc, -->
+<!-- 			t_scene.*, -->
+<!-- 			(select answer from t_score where exercise_id=t_exercise.id and class_id=#{sclassId} and user_id=#{userId} order by create_time desc limit 1) as stu_answer	 -->
+		from t_new_exercise
+		join t_scene on t_scene.id = t_new_exercise.scene_id
+		join t_course on t_course.id = t_new_exercise.course_id
+		where t_new_exercise.course_id = #{courseId} and t_new_exercise.delete_flag = 0
+		<if test="knowledgeId != null and knowledgeId != -1 and knowledgeId != 0">
+			and t_new_exercise.id in (select t_exercise_knowledge.exercise_id from t_exercise_knowledge where t_exercise_knowledge.knowledge_id = #{knowledgeId} and t_exercise_knowledge.course_id = #{courseId})
+	    </if>
+		<if test="knowledgeId == 0">
+			and t_new_exercise.id not in (select t_exercise_knowledge.exercise_id from t_exercise_knowledge where t_exercise_knowledge.course_id = #{courseId})
+	    </if>
+		order by t_new_exercise.id
+	</select>
+
+	<select id="getExerciseInfo" resultMap="ExerciseInfosResultMap">
+		select
+			t_new_exercise.id,
+			t_new_exercise.course_id,
+			t_course.course_name,
+			t_new_exercise.scene_id,
+			t_new_exercise.exercise_name,
+			t_new_exercise.stem as exercise_desc,
+			t_new_exercise.standard_answser,
+			t_new_exercise.exercise_type,
+			t_new_exercise.exercise_analysis,
+			t_scene.*,
+			(select answer from t_score where exercise_id=t_new_exercise.id and class_id=#{sclassId} and user_id=#{userId} order by create_time desc limit 1) as stu_answer
+		from t_new_exercise
+		join t_course on t_course.id = t_new_exercise.course_id
+		left join t_scene on t_scene.id = t_new_exercise.scene_id
+
+		where t_new_exercise.course_id = #{courseId} and t_new_exercise.id=#{exerciseId} and t_new_exercise.delete_flag=0
+	</select>
+
+	<insert id="addExercise" useGeneratedKeys="true" keyProperty="exerciseId">
+		insert into t_new_exercise
+			(course_id, scene_id, exercise_name, exercise_desc, answer, creator, create_time)
+		values
+			(#{courseId}, #{sceneId}, #{exerciseName}, #{exerciseDesc}, #{answer},#{creator}, to_timestamp(#{createTime}, 'yyyy-MM-DD hh24:mi:ss'))
+	</insert>
+
+	<insert id="addCopyExercise" useGeneratedKeys="true" keyProperty="exerciseId">
+		insert into t_new_exercise
+			(course_id, scene_id, exercise_name, exercise_desc, answer, parent_id, creator, create_time)
+		values
+			(#{courseId}, #{sceneId}, #{exerciseName}, #{exerciseDesc}, #{answer}, #{parentId},#{creator}, to_timestamp(#{createTime}, 'yyyy-MM-DD hh24:mi:ss'))
+	</insert>
+
+	<update id="updateExercise">
+		update t_new_exercise
+		<set>
+			<if test="sceneId != -1">
+	            scene_id = #{sceneId},
+	        </if>
+	        <if test="exerciseName != null">
+	            exercise_name = #{exerciseName},
+	        </if>
+	        <if test="exerciseDesc != null">
+	            exercise_desc = #{exerciseDesc},
+	        </if>
+	        <if test="answer != null">
+	            answer = #{answer},
+	        </if>
+	        update_time = to_timestamp(#{updateTime}, 'yyyy-MM-DD hh24:mi:ss')
+		</set>
+		where id = #{exerciseId}
+	</update>
+
+	<update id="batchBuildScene">
+		update t_new_exercise set scene_id = #{sceneId}
+		where id in
+		<foreach collection="exerciseIds" item="item" index="index" separator="," open="(" close=")">
+			#{item}
+		</foreach>
+	</update>
+
+	<update id="deleteExercise">
+		update t_new_exercise set delete_flag = 1, delete_time = current_timestamp where id = #{exerciseId}
+	</update>
+
+	<update id="batchDeleteExercise">
+		update t_new_exercise set delete_flag = 1, delete_time = current_timestamp
+		where id in
+		<foreach collection="exerciseIds" item="item" index="index" separator="," open="(" close=")">
+			#{item}
+		</foreach>
+	</update>
+
+	<delete id="deleteExerciseByCourseId">
+		delete from t_new_exercise where course_id = #{courseId}
+	</delete>
+
+	<!-- 当前学生的习题列表，包含答题结果和答题时间 -->
+	<select id="getExerciseByStu" resultMap="BaseResultMap">
+		select
+			<include refid="exercise_stu_column_list">
+				<property name="te" value="te"/>
+			</include>
+			t_scene.*,
+			ts.score,
+			ts.ct
+		from t_new_exercise te
+		left join(select
+					exercise_id,
+					max(score) as score,
+					max(create_time) as ct
+				  from t_score ts
+				  where user_id = #{userId}
+				  group by exercise_id ,user_id) as ts on te.id = ts.exercise_id
+		join t_scene on t_scene.id = te.scene_id
+		where te.course_id = #{courseId}
+		order by te.id desc
+	</select>
+
+	<select id="getExerciseInfoByStu" resultMap="BaseResultMap">
+		select
+		<include refid="exercise_stu_column_list">
+			<property name="te" value="te"/>
+		</include>
+		(case
+			when (select ts.score from t_score ts
+				where ts.exercise_id = te.id and ts.class_id = #{sclassId} and ts.user_id = #{userId}
+				order by ts.score desc limit 1
+			) is null then -1
+			else (select ts.score from t_score ts
+				where ts.exercise_id = te.id and ts.class_id = #{sclassId} and ts.user_id = #{userId}
+				order by ts.score desc limit 1
+			) end
+		) as score,
+		(select ts.create_time from t_score ts
+			where ts.exercise_id = te.id and ts.class_id = #{sclassId} and ts.user_id = #{userId}
+			order by ts.create_time limit 1
+		) as ct
+		from t_new_exercise te
+		where te.exercise_status=0 and te.course_id = #{courseId} and te.delete_flag = 0
+			<if test="knowledgeId != null and knowledgeId != -1 and knowledgeId != 0">
+				and te.id in (select t_exercise_knowledge.exercise_id from t_exercise_knowledge
+							  where t_exercise_knowledge.course_id = #{courseId}
+							  		and t_exercise_knowledge.knowledge_id = #{knowledgeId})
+		    </if>
+			<if test="knowledgeId == 0">
+				and te.id not in (select t_exercise_knowledge.exercise_id from t_exercise_knowledge
+				   				  where t_exercise_knowledge.course_id = #{courseId})
+		    </if>
+		order by te.id
+	</select>
+
+</mapper>

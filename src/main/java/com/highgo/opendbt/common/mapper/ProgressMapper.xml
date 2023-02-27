@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.highgo.opendbt.progress.mapper.ProgressMapper">
+
+	<resultMap id="CourseProgress" type="com.highgo.opendbt.progress.model.CourseProgress">
+		<result column="correct" property="correct" jdbcType="INTEGER" />
+		<result column="count" property="count" jdbcType="INTEGER" />
+	</resultMap>
+
+	<select id="getCourseProgress" resultMap="CourseProgress">
+		select
+		(select count(1) from (select exercise_id from t_score where user_id =#{userId} and class_id =#{sclassId} group by exercise_id) as answer_count) as correct,
+		(select count(1) from t_new_exercise where course_id =#{courseId}) as count
+	</select>
+
+	<resultMap id="KnowledgeExerciseCount" type="com.highgo.opendbt.progress.model.KnowledgeExerciseCount">
+		<result column="knowledge_id" property="knowledgeId" jdbcType="INTEGER" />
+		<result column="progress" property="progress" jdbcType="INTEGER" />
+	</resultMap>
+
+	<select id="getKnowExerciseCountByCourseId" resultMap="KnowledgeExerciseCount">
+		select
+			knowledge_id,
+			count(knowledge_id) as progress
+		from t_exercise_knowledge
+		where course_id=#{courseId}
+			and exercise_id in (select t_new_exercise.id from t_new_exercise where t_new_exercise.course_id = #{courseId} and t_new_exercise.delete_flag = 0)
+		group by knowledge_id
+	</select>
+
+	<select id="getStuCourseKnowledgeItemProgress" resultMap="KnowledgeExerciseCount">
+		select
+			a.knowledge_id,
+			b.correct*1.0/a.count*100 as progress
+		from (select knowledge_id,count(exercise_id) from t_exercise_knowledge tek where tek.course_id  = #{courseId} group by knowledge_id) a
+		left join
+		(select tek.knowledge_id ,count(tek.knowledge_id ) as correct from t_exercise_knowledge tek
+			join
+			(select
+				distinct exercise_id
+			from
+				t_score ts
+			where
+				score = 100 and user_id=#{userId}
+				and exercise_id in (select exercise_id from t_exercise_knowledge tek
+				where course_id = #{courseId} )
+			) a on tek.exercise_id =a.exercise_id where tek.course_id = #{courseId}  group by tek.knowledge_id
+		) b on a.knowledge_id = b.knowledge_id
+	</select>
+
+	<!-- 班级统计/tab1 正确率 习题列表 | 答对人数、答题人数、全班人数 -->
+	<resultMap id="SclassCorrect" type="com.highgo.opendbt.progress.model.SclassCorrect">
+		<result column="id" property="id" jdbcType="INTEGER" />
+		<result column="exercise_name" property="exerciseName" jdbcType="INTEGER" />
+		<result column="correct_count" property="correctCount" jdbcType="INTEGER" />
+		<result column="answer_count" property="answerCount" jdbcType="INTEGER" />
+		<result column="stu_count" property="stuCount" jdbcType="INTEGER" />
+	</resultMap>
+	<select id="getSclassCorrect" resultMap="SclassCorrect">
+		<!-- select  te.id,te.exercise_name,
+		(select count(1) from (select count(*) from t_score where score=100 and class_id=#{sclassId} and exercise_id = te.id group by user_id) as count) as correct_count,
+		(select count(1) from t_score where exercise_id = te.id and class_id=#{sclassId}) as answer_count,
+		(select count(1) from t_class_stu tcs where tcs.sclass_id =#{sclassId}) as stu_count
+		from t_exercise te where te.course_id in
+		(select course_id from t_class where id =#{sclassId}) -->
+		select
+			te.id,
+			te.exercise_name,
+			(
+				select count(1) from (
+					select count(*) from t_score
+					where score=100 and class_id =#{sclassId} and exercise_id = te.id
+					and user_id not in (select creator from t_class where id =#{sclassId})
+					and user_id in (select t_class_stu.user_id from t_class_stu where t_class_stu.sclass_id = #{sclassId})
+					group by user_id
+				) as count
+			) as correct_count,
+			(select count(1) from (
+				select count(*) from t_score
+				where class_id =#{sclassId} and exercise_id = te.id
+					and user_id not in (select creator from t_class where id =#{sclassId})
+					and user_id in (select t_class_stu.user_id from t_class_stu where t_class_stu.sclass_id = #{sclassId})
+					group by user_id
+				) as count
+			) as answer_count,
+			(select count(1) from t_class_stu tcs where tcs.sclass_id =#{sclassId}) - 1 as stu_count
+		from t_new_exercise te
+		where te.course_id in (select course_id from t_class where id =#{sclassId}) and te.delete_flag = 0
+		order by te.id
+	</select>
+	<!-- end -->
+
+	<!-- 班级统计/tab2 覆盖率 学生列表 | 答对题数量、答过题数量、总题目数 -->
+	<resultMap id="SclassCoverage" type="com.highgo.opendbt.progress.model.SclassCoverage">
+		<result column="id" property="id" jdbcType="INTEGER" />
+		<result column="user_name" property="userName" jdbcType="VARCHAR" />
+		<result column="code" property="code" jdbcType="VARCHAR" />
+		<result column="correct_count" property="correctCount" jdbcType="INTEGER" />
+		<result column="answer_count" property="answerCount" jdbcType="INTEGER" />
+		<result column="submit_answer_count" property="submitAnswerCount" jdbcType="INTEGER" />
+		<result column="exercise_count" property="exerciseCount" jdbcType="INTEGER" />
+	</resultMap>
+	<select id="getSclassCoverage" resultMap="SclassCoverage">
+		<!-- select tsu.id ,tsu.user_name ,tsu.code,
+		(select count(1) from (select count(*) from t_score ts where score=100 and ts.class_id=#{sclassId} and ts.user_id=tcs.user_id group by exercise_id) as count) as correct_count,
+		(select count(1) from t_score ts where ts.user_id=tcs.user_id and ts.class_id=#{sclassId}) as answer_count,
+		(select count(1) from t_exercise te where te.course_id in (select course_id from t_class where id =#{sclassId})) as exercise_count
+		from t_class_stu tcs ,t_sys_user tsu
+		where sclass_id =#{sclassId}
+		and tcs.user_id =tsu.id -->
+		select
+			tsu.id,
+			tsu.user_name,
+			tsu.code,
+			(select count(1) from (select count(*) from t_score ts where score=100 and ts.class_id=#{sclassId} and ts.user_id=tcs.user_id and ts.exercise_id in (select t_new_exercise.id from t_new_exercise where t_new_exercise.course_id in (select t_class.course_id from t_class where t_class.id = #{sclassId}) and t_new_exercise.delete_flag = 0) group by exercise_id) as count) as correct_count,
+			(select count(1) from (select count(*) from t_score ts where ts.user_id=tcs.user_id and ts.class_id=#{sclassId} and ts.exercise_id in (select t_new_exercise.id from t_new_exercise where t_new_exercise.course_id in (select t_class.course_id from t_class where t_class.id = #{sclassId}) and t_new_exercise.delete_flag = 0) group by exercise_id) as count) as answer_count,
+			(select count(1) from t_score ts where ts.user_id=tcs.user_id and ts.class_id=#{sclassId} and ts.exercise_id in (select t_new_exercise.id from t_new_exercise where t_new_exercise.course_id in (select t_class.course_id from t_class where t_class.id = #{sclassId}) and t_new_exercise.delete_flag = 0)) as submit_answer_count,
+			(select count(1) from t_new_exercise te where te.course_id in (select course_id from t_class where id =#{sclassId}) and te.delete_flag = 0) as exercise_count
+		from t_class_stu tcs ,t_sys_user tsu
+		where sclass_id = #{sclassId}
+		and tcs.user_id = tsu.id
+		and tcs.user_id not in (select creator from t_class where id =#{sclassId})
+		order by tsu.code
+	</select>
+
+	<select id="getSclassCoverageByNameAndCode" resultMap="SclassCoverage">
+		select
+			tsu.id,
+			tsu.user_name,
+			tsu.code,
+			(select count(1) from (select count(*) from t_score ts where score=100 and ts.class_id=#{sclassId} and ts.user_id=tcs.user_id and ts.exercise_id in (select t_new_exercise.id from t_new_exercise where t_new_exercise.course_id in (select t_class.course_id from t_class where t_class.id = #{sclassId}) and t_new_exercise.delete_flag = 0) group by exercise_id) as count) as correct_count,
+			(select count(1) from (select count(*) from t_score ts where ts.user_id=tcs.user_id and ts.class_id=#{sclassId} and ts.exercise_id in (select t_new_exercise.id from t_new_exercise where t_new_exercise.course_id in (select t_class.course_id from t_class where t_class.id = #{sclassId}) and t_new_exercise.delete_flag = 0) group by exercise_id) as count) as answer_count,
+			(select count(1) from t_score ts where ts.user_id=tcs.user_id and ts.class_id=#{sclassId} and ts.exercise_id in (select t_new_exercise.id from t_new_exercise where t_new_exercise.course_id in (select t_class.course_id from t_class where t_class.id = #{sclassId}) and t_new_exercise.delete_flag = 0)) as submit_answer_count,
+			(select count(1) from t_new_exercise te where te.course_id in (select course_id from t_class where id =#{sclassId}) and te.delete_flag = 0) as exercise_count
+		from t_class_stu tcs ,t_sys_user tsu
+		where sclass_id = #{sclassId}
+		and tcs.user_id = tsu.id
+		and tcs.user_id not in (select creator from t_class where id =#{sclassId})
+		and (tsu.user_name like '%${searchValue}%' or tsu.code like '%${searchValue}%')
+		order by tsu.code
+	</select>
+	<!-- end -->
+
+	<!-- 学生统计/tab1 正确率 习题列表 | 答对次数、答题次数   |   答对人数、答题人数、全班人数 -->
+	<resultMap id="StudentCorrect" type="com.highgo.opendbt.progress.model.StudentCorrect">
+		<result column="id" property="id" jdbcType="INTEGER" />
+		<result column="exercise_name" property="exerciseName" jdbcType="INTEGER" />
+		<result column="correct_count" property="correctCount" jdbcType="INTEGER" />
+		<result column="answer_count" property="answerCount" jdbcType="INTEGER" />
+		<result column="all_correct_count" property="allCorrectCount" jdbcType="INTEGER" />
+		<result column="all_answer_count" property="allAnswerCount" jdbcType="INTEGER" />
+		<result column="stu_count" property="stuCount" jdbcType="INTEGER" />
+	</resultMap>
+	<select id="getStudentCorrect" resultMap="StudentCorrect">
+		<!-- select  te.id,te.exercise_name,
+		(select count(*) from t_score where user_id =#{userId} and score=100 and class_id =#{sclassId} and exercise_id =  te.id )  as correct_count,
+		(select count(1) from t_score where user_id =#{userId} and class_id =#{sclassId} and exercise_id =  te.id) as answer_count,
+		(select count(1) from (select count(*) from t_score where score=100 and class_id =#{sclassId} and exercise_id =  te.id group by user_id) as count) as all_correct_count,
+		(select count(1) from t_score where class_id =#{sclassId} and exercise_id =  te.id) as all_answer_count,
+		(select count(1) from t_class_stu tcs where tcs.sclass_id =#{sclassId}) as stu_count
+		from t_exercise te where te.course_id in
+		(select course_id from t_class where id =#{sclassId}) -->
+		select
+			te.id,
+			te.exercise_name,
+			(select count(*) from t_score where user_id =#{userId} and score=100 and class_id =#{sclassId} and exercise_id = te.id ) as correct_count,
+			(select count(1) from t_score where user_id =#{userId} and class_id =#{sclassId} and exercise_id = te.id) as answer_count,
+			(select count(1) from (select count(*) from t_score where score=100 and class_id =#{sclassId} and exercise_id = te.id and user_id not in (select creator from t_class where id =#{sclassId}) and user_id in (select t_class_stu.user_id from t_class_stu where t_class_stu.sclass_id = #{sclassId}) group by user_id) as count) as all_correct_count,
+			(select count(1) from (select count(*) from t_score where class_id =#{sclassId} and exercise_id = te.id and user_id not in (select creator from t_class where id =#{sclassId}) and user_id in (select t_class_stu.user_id from t_class_stu where t_class_stu.sclass_id = #{sclassId}) group by user_id) as count) as all_answer_count,
+			(select count(1) from t_class_stu tcs where tcs.sclass_id =#{sclassId}) - 1 as stu_count
+		from t_new_exercise te
+		where te.course_id in (select course_id from t_class where id =#{sclassId}) and te.delete_flag = 0
+		order by te.id
+	</select>
+
+	<!-- 学生统计/tab2 覆盖率 当前学生 | 答对题数量、答过题数量、总题目数 | 所有学生答对题目平均值(答对人题数/总学生) | 所有学生答过题目平均值(做过人题数/总学生) -->
+	<resultMap id="StudentCoverage" type="com.highgo.opendbt.progress.model.StudentCoverage">
+		<result column="id" property="id" jdbcType="INTEGER" />
+		<result column="user_name" property="userName" jdbcType="VARCHAR" />
+		<result column="code" property="code" jdbcType="VARCHAR" />
+		<result column="correct_count" property="correctCount" jdbcType="INTEGER" />
+		<result column="answer_count" property="answerCount" jdbcType="INTEGER" />
+		<result column="exercise_count" property="exerciseCount" jdbcType="INTEGER" />
+		<result column="avg_correct_count" property="avgCorrectCount" jdbcType="FLOAT" />
+		<result column="avg_answer_count" property="avgAnswerCount" jdbcType="FLOAT" />
+	</resultMap>
+	<select id="getStudentCoverage" resultMap="StudentCoverage">
+		<!-- select tsu.id ,tsu.user_name ,tsu.code,
+		(select count(1) from (select count(*) from t_score ts where score=100 and ts.class_id=#{sclassId} and ts.user_id=tcs.user_id group by exercise_id) as count) as correct_count,
+		(select count(1) from t_score ts where ts.user_id=tcs.user_id and ts.class_id=#{sclassId}) as answer_count,
+		(select count(1) from t_exercise te where te.course_id in (select course_id from t_class where id =#{sclassId})) as exercise_count,
+		(select count(1) from (select count(*) from t_score ts where score=100 and ts.class_id=#{sclassId} group by exercise_id) as count)*1.0/
+		(select count(1) from t_class_stu tcs where tcs.sclass_id =#{sclassId}) as avg_correct_count,
+		(select count(1) from t_score ts where ts.class_id=#{sclassId})*1.0/
+		(select count(1) from t_class_stu tcs where tcs.sclass_id =#{sclassId}) as avg_answer_count
+		from t_class_stu tcs ,t_sys_user tsu
+		where sclass_id =#{sclassId} and tsu.id=#{userId}
+		and tcs.user_id =tsu.id  -->
+		select tsu.id ,tsu.user_name ,tsu.code,
+		(select count(1) from (select count(*) from t_score ts where score=100 and ts.class_id=#{sclassId} and ts.user_id=tcs.user_id and ts.exercise_id in (select t_new_exercise.id from t_new_exercise where t_new_exercise.course_id in (select t_class.course_id from t_class where t_class.id = #{sclassId}) and t_new_exercise.delete_flag = 0) group by exercise_id) as count) as correct_count,
+		(select count(1) from (select count(*) from t_score ts where ts.user_id=tcs.user_id and ts.class_id=#{sclassId} and ts.exercise_id in (select t_new_exercise.id from t_new_exercise where t_new_exercise.course_id in (select t_class.course_id from t_class where t_class.id = #{sclassId}) and t_new_exercise.delete_flag = 0) group by exercise_id) as count) as answer_count,
+		(select count(1) from t_new_exercise te where te.course_id in (select course_id from t_class where id =#{sclassId}) and te.delete_flag = 0) as exercise_count,
+		(case
+			when ((select count(1) from t_class_stu tcs where tcs.sclass_id =#{sclassId}) - 1 ) = 0 then 0
+			else round(((select count(1) from (select distinct(exercise_id, user_id) from t_score ts
+			where score=100 and ts.class_id=#{sclassId}
+			and user_id not in (select creator from t_class where id =#{sclassId})
+			and user_id in (select t_class_stu.user_id from t_class_stu where t_class_stu.sclass_id = #{sclassId})
+			and ts.exercise_id in (select t_new_exercise.id from t_new_exercise where t_new_exercise.course_id in (select t_class.course_id from t_class where t_class.id = #{sclassId}) and t_new_exercise.delete_flag = 0)) as count)
+			* 1.0 /
+			((select count(1) from t_class_stu tcs where tcs.sclass_id =#{sclassId}) - 1 )), 2) end
+		) as avg_correct_count,
+		(case
+			when ((select count(1) from t_class_stu tcs where tcs.sclass_id =#{sclassId}) - 1 ) = 0 then 0
+			else round(((select count(1) from (select distinct(exercise_id, user_id) from t_score ts
+			where ts.class_id=#{sclassId}
+			and user_id not in (select creator from t_class where id =#{sclassId})
+			and user_id in (select t_class_stu.user_id from t_class_stu where t_class_stu.sclass_id = #{sclassId})
+			and ts.exercise_id in (select t_new_exercise.id from t_new_exercise where t_new_exercise.course_id in (select t_class.course_id from t_class where t_class.id = #{sclassId}) and t_new_exercise.delete_flag = 0)) as count)
+			* 1.0 /
+			((select count(1) from t_class_stu tcs where tcs.sclass_id =#{sclassId}) - 1)), 2) end
+		) as avg_answer_count
+		from t_class_stu tcs ,t_sys_user tsu
+		where tcs.sclass_id =#{sclassId} and tsu.id=#{userId}
+		and tcs.user_id =tsu.id
+	</select>
+
+	<resultMap id="StuKnowledgeExerciseInfo" type="com.highgo.opendbt.progress.model.StuKnowledgeExerciseInfo">
+		<result column="id" property="knowledgeId" jdbcType="INTEGER" />
+		<result column="name" property="name" jdbcType="INTEGER" />
+		<result column="exercise_number" property="exerciseNumber" jdbcType="INTEGER" />
+		<result column="progress" property="progress" jdbcType="DOUBLE" />
+	</resultMap>
+
+	<select id="getStuKnowledgeExerciseInfo" resultMap="StuKnowledgeExerciseInfo">
+		select
+			t_course_knowledge.id,
+			t_course_knowledge.name,
+				(select count(1) from t_exercise_knowledge where t_exercise_knowledge.knowledge_id = t_course_knowledge.id and t_exercise_knowledge.exercise_id in
+			(select t_new_exercise.id from t_new_exercise where t_new_exercise.exercise_status=0 and t_new_exercise.course_id in
+			(select t_class.course_id from t_class where t_class.id = #{sclassId}) and t_new_exercise.delete_flag = 0)) as exercise_number,
+			round(((select count(1) from (select distinct(t_score.exercise_id) from t_score
+				where t_score.exercise_id in (select t_exercise_knowledge.exercise_id from t_exercise_knowledge where t_exercise_knowledge.knowledge_id = t_course_knowledge.id and t_exercise_knowledge.exercise_id in (select t_new_exercise.id from t_new_exercise where t_new_exercise.exercise_status=0 and t_new_exercise.course_id in (select t_class.course_id from t_class where t_class.id = #{sclassId}) and t_new_exercise.delete_flag = 0))
+				and t_score.class_id = #{sclassId} and t_score.user_id = #{userId}) as t)
+				* 1.0 /
+				(select count(1) from t_exercise_knowledge where t_exercise_knowledge.knowledge_id = t_course_knowledge.id and t_exercise_knowledge.exercise_id in (select t_new_exercise.id from t_new_exercise where t_new_exercise.exercise_status=0 and t_new_exercise.course_id in (select t_class.course_id from t_class where t_class.id = #{sclassId}) and t_new_exercise.delete_flag = 0))
+				* 100
+				), 2) as progress
+		from t_course_knowledge
+		where t_course_knowledge.id in
+		(select distinct t_exercise_knowledge.knowledge_id
+			from t_exercise_knowledge
+			where t_exercise_knowledge.course_id in
+			(select t_class.course_id from t_class where t_class.id = #{sclassId})
+			and t_exercise_knowledge.exercise_id in
+			(select t_new_exercise.id from t_new_exercise where t_new_exercise.exercise_status=0 and t_new_exercise.course_id in (select t_class.course_id from t_class where t_class.id = #{sclassId}) and t_new_exercise.delete_flag = 0))
+		order by progress desc, t_course_knowledge.id asc
+		<if test="number != null and number != 0">
+	         limit #{number}
+	    </if>
+	</select>
+
+	<select id="getNotKnowledgeExerciseCount" resultMap="StuKnowledgeExerciseInfo">
+		select count(1) as exercise_number
+		from (select t_new_exercise.id from t_new_exercise
+		where t_new_exercise.exercise_status=0 and t_new_exercise.id not in (select t_exercise_knowledge.exercise_id from t_exercise_knowledge where t_exercise_knowledge.course_id = #{courseId})
+		and t_new_exercise.id in (select t_new_exercise.id from t_new_exercise where t_new_exercise.course_id = #{courseId} and t_new_exercise.delete_flag = 0)
+		and t_new_exercise.course_id = #{courseId}) as t
+	</select>
+
+	<select id="getNotKnowledgeExerciseInfo" resultMap="StuKnowledgeExerciseInfo">
+		select
+			0 as id,
+			'' as name,
+			(select count(1) from (select t_new_exercise.id from t_new_exercise
+				where t_new_exercise.exercise_status=0 and t_new_exercise.id not in (select t_exercise_knowledge.exercise_id from t_exercise_knowledge where t_exercise_knowledge.course_id = #{courseId})
+				and t_new_exercise.id in (select t_new_exercise.id from t_new_exercise where t_new_exercise.exercise_status=0 and t_new_exercise.course_id = #{courseId} and t_new_exercise.delete_flag = 0)
+				and t_new_exercise.course_id = #{courseId}) as t
+			   ) as exercise_number,
+			round(((select count(1) from (
+				select distinct(t_score.exercise_id) from t_score
+				where t_score.exercise_id in (
+				select t_new_exercise.id from t_new_exercise
+				where t_new_exercise.exercise_status=0 and t_new_exercise.id not in (select t_exercise_knowledge.exercise_id from t_exercise_knowledge where t_exercise_knowledge.course_id = #{courseId})
+				and t_new_exercise.id in (select t_new_exercise.id from t_new_exercise where t_new_exercise.exercise_status=0 and t_new_exercise.course_id = #{courseId} and t_new_exercise.delete_flag = 0)
+				and t_new_exercise.course_id = #{courseId})
+				and t_score.class_id = #{sclassId} and t_score.user_id = #{userId}) as a)
+			* 1.0 /
+			(select count(1) from (select t_new_exercise.id from t_new_exercise
+				where t_new_exercise.exercise_status=0 and t_new_exercise.id not in (select t_exercise_knowledge.exercise_id from t_exercise_knowledge where t_exercise_knowledge.course_id = #{courseId})
+				and t_new_exercise.id in (select t_new_exercise.id from t_new_exercise where t_new_exercise.exercise_status=0 and t_new_exercise.course_id = #{courseId} and t_new_exercise.delete_flag = 0)
+				and t_new_exercise.course_id = #{courseId}) as t
+			   ) * 100
+			), 2) as progress
+	</select>
+
+</mapper>

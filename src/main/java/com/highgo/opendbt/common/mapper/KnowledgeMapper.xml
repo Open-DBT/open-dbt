@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.highgo.opendbt.course.mapper.KnowledgeMapper">
+
+	<resultMap id="BaseResultMap" type="com.highgo.opendbt.course.domain.entity.Knowledge">
+		<id column="id" property="knowledgeId" jdbcType="INTEGER" />
+		<result column="parent_id" property="parentId" jdbcType="INTEGER" />
+		<result column="course_id" property="courseId" jdbcType="INTEGER" />
+		<result column="name" property="name" jdbcType="VARCHAR" />
+		<result column="keyword" property="keyword" jdbcType="VARCHAR" />
+		<result column="knowledge_desc" property="knowledgeDesc" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<select id="getKnowledge" resultMap="BaseResultMap">
+		select
+			t_course_knowledge.id,
+			t_course_knowledge.parent_id,
+			t_course_knowledge.course_id,
+			t_course_knowledge.name,
+			t_course_knowledge.keyword,
+			t_course_knowledge.knowledge_desc
+		from t_course_knowledge
+		where t_course_knowledge.course_id = #{courseId}
+		order by t_course_knowledge.parent_id, t_course_knowledge.id
+	</select>
+
+	<select id="getKnowledgeByKnowledgeId" resultMap="BaseResultMap">
+		select
+			t_course_knowledge.id,
+			t_course_knowledge.parent_id,
+			t_course_knowledge.course_id,
+			t_course_knowledge.name,
+			t_course_knowledge.keyword,
+			t_course_knowledge.knowledge_desc
+		from t_course_knowledge
+		where t_course_knowledge.id = #{knowledgeId}
+	</select>
+
+	<select id="getKnowledgeByExerciseId" resultMap="BaseResultMap">
+		select
+			t_course_knowledge.id,
+			t_course_knowledge.parent_id,
+			t_course_knowledge.course_id,
+			t_course_knowledge.name,
+			t_course_knowledge.keyword,
+			t_course_knowledge.knowledge_desc
+		from t_course_knowledge
+		left join t_exercise_knowledge on t_exercise_knowledge.knowledge_id = t_course_knowledge.id
+		left join t_new_exercise on t_new_exercise.id = t_exercise_knowledge.exercise_id
+		where t_new_exercise.id = #{exerciseId}
+		order by t_exercise_knowledge.id
+	</select>
+
+	<insert id="addKnowledge" useGeneratedKeys="true" keyProperty="knowledgeId">
+		insert into t_course_knowledge
+			(parent_id, course_id, name, keyword, knowledge_desc)
+		values
+			(#{parentId}, #{courseId}, #{name}, #{keyword}, '')
+	</insert>
+
+	<update id="updateKnowledge">
+		update t_course_knowledge
+		<set>
+			<if test="name != null">
+	            name = #{name},
+	        </if>
+	        <if test="keyword != null">
+	            keyword = #{keyword},
+	        </if>
+	        <if test="parentId != null and parentId != -1">
+	            parent_id = #{parentId}
+	        </if>
+		</set>
+		where id = #{knowledgeId}
+	</update>
+
+	<delete id="deleteKnowledge">
+		delete from t_course_knowledge where id = #{knowledgeId}
+	</delete>
+
+	<delete id="deleteKnowledgeByCourseId">
+		delete from t_course_knowledge where course_id = #{courseId}
+	</delete>
+
+	<select id="getKnowledgeByNewExerciseId" resultMap="BaseResultMap">
+		select
+			t_course_knowledge.id,
+			t_course_knowledge.parent_id,
+			t_course_knowledge.course_id,
+			t_course_knowledge.name,
+			t_course_knowledge.keyword,
+			t_course_knowledge.knowledge_desc
+		from t_course_knowledge
+		left join t_exercise_knowledge on t_exercise_knowledge.knowledge_id = t_course_knowledge.id
+		left join t_new_exercise on t_new_exercise.id = t_exercise_knowledge.exercise_id
+		where t_new_exercise.id = #{exerciseId}
+		order by t_exercise_knowledge.id
+	</select>
+</mapper>

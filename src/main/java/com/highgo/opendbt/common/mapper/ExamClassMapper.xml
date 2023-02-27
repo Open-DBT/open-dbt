@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.highgo.opendbt.teacher.mapper.ExamClassMapper">
+
+	<resultMap id="BaseResultMap" type="com.highgo.opendbt.teacher.domain.model.ExamClass">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="exam_id" property="examId" jdbcType="INTEGER" />
+		<result column="class_id" property="classId" jdbcType="INTEGER" />
+		<result column="course_id" property="courseId" jdbcType="INTEGER" />
+		<result column="test_start" property="testStart" jdbcType="VARCHAR" />
+		<result column="test_end" property="testEnd" jdbcType="VARCHAR" />
+		<result column="test_is_open" property="testIsOpen" jdbcType="BOOLEAN" />
+
+		<association property="exam" javaType="com.highgo.opendbt.teacher.domain.model.Exam">
+			<id column="id" property="id" jdbcType="INTEGER" />
+			<result column="test_name" property="testName" jdbcType="VARCHAR" />
+			<result column="test_desc" property="testDesc" jdbcType="VARCHAR" />
+			<result column="exercise_source" property="exerciseSource" jdbcType="INTEGER" />
+			<result column="is_end" property="isEnd" jdbcType="INTEGER" />
+		</association>
+		<association property="sclass"  javaType="com.highgo.opendbt.sclass.domain.entity.Sclass">
+			<id column="id" property="id" jdbcType="INTEGER" />
+			<result column="class_name" property="className" jdbcType="VARCHAR" />
+		</association>
+		<association property="course" javaType="com.highgo.opendbt.course.domain.entity.Course">
+			<id column="course_id" property="courseId" jdbcType="INTEGER" />
+			<result column="course_name" property="courseName" jdbcType="VARCHAR" />
+		</association>
+	</resultMap>
+
+
+	<sql id="exam_column_list">
+		${exam}.id as id,
+		${exam}.test_name,
+		${exam}.test_desc
+	</sql>
+	<sql id="sclass_column_list">
+		${sclass}.id as id,
+		${sclass}.class_name
+	</sql>
+
+	<select id="getExamClassById" resultMap="BaseResultMap">
+		select tec.* from t_exam_class tec where tec.id = #{examClassId}
+	</select>
+
+	<select id="getExamClassListByCourseId" resultMap="BaseResultMap">
+		select tec.*,
+			<include refid="exam_column_list">
+				<property name="exam" value="exam"/>
+			</include>,
+			<include refid="sclass_column_list">
+				<property name="sclass" value="sclass"/>
+			</include>
+		from t_exam_class tec
+		join t_exam exam on exam.id = tec.exam_id
+		join t_class sclass on sclass.id = tec.class_id
+		where exam.creator = #{userId}
+			and exam.course_id = #{courseId}
+			and exam.delete_flag = 0
+			and tec.delete_flag = 0
+		order by tec.test_start asc
+	</select>
+
+	<select id="getExamClassListByClassId" resultMap="BaseResultMap">
+		select tec.*,
+			<include refid="exam_column_list">
+				<property name="exam" value="exam"/>
+			</include>,
+			<include refid="sclass_column_list">
+				<property name="sclass" value="sclass"/>
+			</include>
+		from t_exam_class tec
+		join t_exam exam on exam.id = tec.exam_id
+		join t_class sclass on sclass.id = tec.class_id
+		where exam.creator = #{userId}
+			and tec.class_id = #{classId}
+			and exam.delete_flag = 0
+			and tec.delete_flag = 0
+		order by tec.test_start asc
+	</select>
+
+	<update id="deleteExamClassById">
+		update t_exam_class set delete_flag = 1, delete_time = current_timestamp where id = #{examClassId}
+	</update>
+
+ 	<insert id="addExamClass" useGeneratedKeys="true" keyProperty="id">
+ 		insert into t_exam_class
+			(exam_id, class_id, course_id, test_start, test_end, test_is_open)
+ 		values
+			(#{examId}, #{classId}, #{courseId}, #{testStart}, #{testEnd}, #{testIsOpen})
+ 	</insert>
+
+	<update id="updateExamClass">
+		update t_exam_class
+		<set>
+			exam_id = #{examId},
+			class_id = #{classId},
+	        <if test="testStart != null">
+	            test_start = #{testStart},
+	        </if>
+	        <if test="testEnd != null">
+	            test_end = #{testEnd},
+	        </if>
+	        test_is_open=#{testIsOpen}
+		</set>
+		where id = #{id}
+	</update>
+
+	<select id="getExamDetailById" resultMap="BaseResultMap">
+		select
+			tec.*,
+			tc.course_name,
+			te.test_name,
+			(case
+				when
+					current_timestamp &gt;= tec.test_start::timestamp
+					and current_timestamp &lt;= tec.test_end::timestamp
+				then 0
+				when
+					current_timestamp &gt; tec.test_end::timestamp
+				then 1
+			end
+			) as is_end
+		from t_exam_class tec
+		left join t_course tc on tc.id = tec.course_id
+		left join t_exam te on te.id = tec.exam_id
+		where tec.id = #{examClassId}
+	</select>
+
+</mapper>

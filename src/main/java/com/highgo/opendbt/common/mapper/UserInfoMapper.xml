@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.highgo.opendbt.system.mapper.UserInfoMapper">
+
+	<resultMap id="BaseResultMap" type="com.highgo.opendbt.system.domain.entity.UserInfo">
+		<id column="id" property="userId" jdbcType="INTEGER" />
+		<result column="user_name" property="userName" jdbcType="VARCHAR" />
+		<result column="password" property="password" jdbcType="VARCHAR" />
+		<result column="code" property="code" jdbcType="VARCHAR" />
+		<result column="sex" property="sex" jdbcType="INTEGER" />
+		<result column="mobile" property="mobile" jdbcType="VARCHAR" />
+		<result column="avatar" property="avatar" jdbcType="VARCHAR" />
+		<result column="nick_name" property="nickName" jdbcType="VARCHAR" />
+		<result column="english_name" property="englishName" jdbcType="VARCHAR" />
+		<result column="creator" property="creator" jdbcType="INTEGER" />
+		<result column="create_time" property="createTime" jdbcType="VARCHAR" />
+		<result column="operator" property="operator" jdbcType="INTEGER" />
+		<result column="update_time" property="updateTime" jdbcType="VARCHAR" />
+		<result column="is_stop" property="isStop" jdbcType="INTEGER" />
+		<result column="role_type" property="roleType" jdbcType="INTEGER" />
+		<result column="school" property="school" jdbcType="VARCHAR" />
+		<result column="major" property="major" jdbcType="VARCHAR" />
+		<result column="mail" property="mail" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<resultMap id="BaseResultMapAndRoleList" type="com.highgo.opendbt.system.domain.entity.UserInfo">
+		<id column="id" property="userId" jdbcType="INTEGER" />
+		<result column="user_name" property="userName" jdbcType="VARCHAR" />
+		<result column="password" property="password" jdbcType="VARCHAR" />
+		<result column="code" property="code" jdbcType="VARCHAR" />
+		<result column="sex" property="sex" jdbcType="INTEGER" />
+		<result column="mobile" property="mobile" jdbcType="VARCHAR" />
+		<result column="avatar" property="avatar" jdbcType="VARCHAR" />
+		<result column="nick_name" property="nickName" jdbcType="VARCHAR" />
+		<result column="english_name" property="englishName" jdbcType="VARCHAR" />
+		<result column="creator" property="creator" jdbcType="INTEGER" />
+		<result column="creator_name" property="creatorName" jdbcType="VARCHAR" />
+		<result column="create_time" property="createTime" jdbcType="VARCHAR" />
+		<result column="operator" property="operator" jdbcType="INTEGER" />
+		<result column="update_time" property="updateTime" jdbcType="VARCHAR" />
+		<result column="is_stop" property="isStop" jdbcType="INTEGER" />
+		<result column="role_type" property="roleType" jdbcType="INTEGER" />
+		<result column="school" property="school" jdbcType="VARCHAR" />
+		<result column="major" property="major" jdbcType="VARCHAR" />
+		<result column="mail" property="mail" jdbcType="VARCHAR" />
+        <collection property="roleList" javaType="ArrayList" select="com.highgo.opendbt.system.mapper.RoleInfoMapper.getRoleByUserId" column="id">
+			<id column="id" property="roleId" jdbcType="INTEGER" />
+			<result column="role_name" property="roleName" jdbcType="VARCHAR" />
+        </collection>
+	</resultMap>
+
+	<select id="getUser" resultMap="BaseResultMapAndRoleList">
+		select
+			t_sys_user.id,
+			t_sys_user.user_name,
+			t_sys_user.code,
+			t_sys_user.sex,
+			t_sys_user.mobile,
+			t_sys_user.avatar,
+			t_sys_user.nick_name,
+			t_sys_user.english_name,
+			t_sys_user.creator,
+			tsu.user_name as creator_name,
+			t_sys_user.create_time,
+			t_sys_user.operator,
+			t_sys_user.update_time,
+			t_sys_user.is_stop,
+			t_sys_user.role_type,
+			t_sys_user.school,
+			t_sys_user.major,
+			t_sys_user.mail
+            from t_sys_user
+            left join t_sys_user tsu on tsu.id = t_sys_user.creator
+			where 1 = 1
+			<if test="userName != null and userName != ''">
+	            and t_sys_user.user_name like '%${userName}%'
+	        </if>
+	        <if test="code != null and code != ''">
+	            and t_sys_user.code like '%${code}%'
+	        </if>
+		order by t_sys_user.id desc
+	</select>
+
+	<select id="getUserByRolrId" resultMap="BaseResultMapAndRoleList">
+		select
+			t_sys_user.id,
+			t_sys_user.user_name,
+			t_sys_user.code,
+			t_sys_user.sex,
+			t_sys_user.mobile,
+			t_sys_user.avatar,
+			t_sys_user.nick_name,
+			t_sys_user.english_name,
+			t_sys_user.creator,
+			tsu.user_name as creator_name,
+			t_sys_user.create_time,
+			t_sys_user.operator,
+			t_sys_user.update_time,
+			t_sys_user.is_stop,
+			t_sys_user.role_type,
+			t_sys_user.school,
+			t_sys_user.major,
+			t_sys_user.mail
+		from t_sys_user
+		left join t_sys_user_role on t_sys_user_role.user_id = t_sys_user.id
+		left join t_sys_user tsu on tsu.id = t_sys_user.creator
+		where t_sys_user_role.role_id = #{roleId}
+		<if test="userName != null and userName != ''">
+	        and t_sys_user.user_name like '%${userName}%'
+	    </if>
+	    <if test="code != null and code != ''">
+	        and t_sys_user.code like '%${code}%'
+	    </if>
+		order by t_sys_user.id desc
+	</select>
+
+	<select id="getUserByCode" resultMap="BaseResultMap">
+		select
+			t_sys_user.id,
+			t_sys_user.user_name,
+			t_sys_user.password,
+			t_sys_user.code,
+			t_sys_user.sex,
+			t_sys_user.mobile,
+			t_sys_user.avatar,
+			t_sys_user.nick_name,
+			t_sys_user.english_name,
+			t_sys_user.creator,
+			t_sys_user.create_time,
+			t_sys_user.operator,
+			t_sys_user.update_time,
+			t_sys_user.is_stop,
+			t_sys_user.role_type,
+			t_sys_user.school,
+			t_sys_user.major,
+			t_sys_user.mail
+		from t_sys_user
+		where t_sys_user.code = #{code}
+	</select>
+
+	<insert id="addUser" useGeneratedKeys="true" keyProperty="userId">
+		insert into t_sys_user
+			(user_name, password, code, sex, avatar, creator, create_time, role_type)
+		values
+			(#{userName}, #{password}, #{code}, #{sex}, #{avatar}, #{creator}, to_timestamp(#{createTime}, 'yyyy-MM-DD hh24:mi:ss'), #{roleType})
+	</insert>
+
+	<update id="updateUser">
+		update t_sys_user
+		<set>
+			<if test="userName != null">
+	            user_name = #{userName},
+	        </if>
+	        <if test="code != null">
+	            code = #{code},
+	        </if>
+	        <if test="sex != null">
+	            sex = #{sex},
+	        </if>
+	        <if test="mobile != null">
+	            mobile = #{mobile},
+	        </if>
+	        <!-- <if test="avatar != null and avatar != ''">
+	            avatar = #{avatar},
+	        </if> -->
+	        <if test="nickName != null">
+	            nick_name = #{nickName},
+	        </if>
+	        <if test="englishName != null">
+	            english_name = #{englishName},
+	        </if>
+	        <if test="operator != null">
+	            operator = #{operator},
+	        </if>
+	        <if test="updateTime != null">
+	            update_time = to_timestamp(#{updateTime}, 'yyyy-MM-DD hh24:mi:ss')
+	        </if>
+		</set>
+		where id = #{userId}
+	</update>
+
+	<update id="resetUserPassword">
+		update t_sys_user
+		set password = #{password}
+		where id = #{userId}
+	</update>
+
+	<update id="updateUserIsStop">
+		update t_sys_user
+		set is_stop = #{isStop}
+		where id = #{userId}
+	</update>
+
+	<update id="updateUserDefRole">
+		update t_sys_user
+		set role_type = #{roleType}
+		where id = #{userId}
+	</update>
+
+	<delete id="deleteUserRoleByUserId">
+		delete from t_sys_user_role where user_id = #{userId}
+	</delete>
+
+	<insert id="addUserRole">
+		insert into t_sys_user_role
+			(role_id, user_id)
+		values
+		<foreach collection="roleIds" item="item" index="index" separator=",">
+			(#{item}, #{userId})
+		</foreach>
+	</insert>
+
+	<select id="getSclassStu" resultMap="BaseResultMap">
+		select
+			tsu.*
+		from
+			t_class tc ,
+			t_class_stu tcs ,
+			t_sys_user tsu
+		where 1=1
+			<if test="userName != null and userName != ''">
+	            and tsu.user_name like '%${userName}%'
+	        </if>
+			<if test="code != null and code != ''">
+	            and tsu.code like '%${code}%'
+	        </if>
+			and tc.id = #{sclassId}
+			and tcs.user_id = tsu.id
+			and tc.id = tcs.sclass_id
+			and tsu.id != tc.creator
+	        order by tsu.id desc
+	</select>
+
+	<select id="getSclassStudentList" resultMap="BaseResultMap">
+		select
+			tsu.*
+		from
+			t_class tc ,
+			t_class_stu tcs ,
+			t_sys_user tsu
+		where 1=1
+			<if test="keyWord != null and keyWord != ''">
+	            and (tsu.user_name like '%${keyWord}%' or tsu.code like '%${keyWord}%')
+	        </if>
+			and tcs.user_id = tsu.id
+			and tc.id = tcs.sclass_id
+			and tsu.id != tc.creator
+			and tc.id = #{sclassId}
+	        order by tsu.id desc
+	</select>
+
+	<update id="updateAvatar">
+		update t_sys_user
+		set avatar = #{avatar}
+		where id = #{userId}
+	</update>
+
+	<update id="updateAccountInfo">
+		update t_sys_user
+		<set>
+	        <if test="mobile != null">
+	            mobile = #{mobile},
+	        </if>
+	        <if test="avatar != null">
+	            avatar = #{avatar},
+	        </if>
+	        <if test="school != null">
+	            school = #{school},
+	        </if>
+	        <if test="major != null">
+	            major = #{major},
+	        </if>
+	        <if test="mail != null">
+	            mail = #{mail},
+	        </if>
+	        <if test="operator != null">
+	            operator = #{operator},
+	        </if>
+	        <if test="updateTime != null">
+	            update_time = to_timestamp(#{updateTime}, 'yyyy-MM-DD hh24:mi:ss')
+	        </if>
+		</set>
+		where id = #{userId}
+	</update>
+
+	<select id="getTeachers" resultMap="BaseResultMap">
+		select
+			t_sys_user.id,
+			t_sys_user.user_name,
+			t_sys_user.code
+		from t_sys_user
+		left join t_sys_user_role on t_sys_user_role.user_id = t_sys_user.id
+		where t_sys_user_role.role_id = 3
+			and t_sys_user.id not in (select t_sys_user_role.user_id from t_sys_user_role where t_sys_user_role.role_id = 2)
+			and t_sys_user.id != #{userId}
+		order by t_sys_user.id
+	</select>
+	<select id="getStudentListByClassId" resultMap="BaseResultMap">
+        select
+        tsu.*
+        from
+        t_class tc ,
+        t_class_stu tcs ,
+        t_sys_user tsu
+        where 1=1
+        and tcs.user_id = tsu.id
+        and tc.id = tcs.sclass_id
+        and tsu.id != tc.creator
+        and tc.id = #{sclassId}
+        order by tsu.id desc
+    </select>
+</mapper>

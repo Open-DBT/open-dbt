@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.highgo.opendbt.system.mapper.RoleInfoMapper">
+
+	<resultMap id="BaseResultMap" type="com.highgo.opendbt.system.domain.model.RoleInfo">
+		<id column="id" property="roleId" jdbcType="INTEGER" />
+		<result column="role_name" property="roleName" jdbcType="VARCHAR" />
+		<result column="role_desc" property="roleDesc" jdbcType="VARCHAR" />
+		<result column="is_predefined" property="isPredefined" jdbcType="INTEGER" />
+		<result column="creator" property="creator" jdbcType="INTEGER" />
+		<result column="create_time" property="createTime" jdbcType="VARCHAR" />
+		<result column="operator" property="operator" jdbcType="INTEGER" />
+		<result column="update_time" property="updateTime" jdbcType="VARCHAR" />
+		<result column="is_delete" property="isDelete" jdbcType="INTEGER" />
+	</resultMap>
+
+	<select id="getRole" resultMap="BaseResultMap">
+		select
+			t_sys_role.id,
+			t_sys_role.role_name,
+			t_sys_role.role_desc,
+			t_sys_role.is_predefined,
+			t_sys_role.creator,
+			t_sys_role.create_time,
+			t_sys_role.operator,
+			t_sys_role.update_time,
+			t_sys_role.is_delete
+		from t_sys_role
+		where t_sys_role.is_delete = 0
+		order by t_sys_role.id
+	</select>
+
+	<select id="getRoleByRoleName" resultMap="BaseResultMap">
+		select
+			t_sys_role.id,
+			t_sys_role.role_name
+		from t_sys_role
+		where t_sys_role.role_name = #{roleName} and t_sys_role.is_delete = 0
+	</select>
+
+	<insert id="addRole" useGeneratedKeys="true" keyProperty="roleId">
+		insert into t_sys_role
+			(role_name, role_desc, creator, create_time)
+		values
+			(#{roleName}, #{roleDesc}, #{creator}, to_timestamp(#{createTime}, 'yyyy-MM-DD hh24:mi:ss'))
+	</insert>
+
+	<update id="updateRole">
+		update t_sys_role
+		set role_name = #{roleName}, role_desc = #{roleDesc}, operator = #{operator}, update_time = to_timestamp(#{updateTime}, 'yyyy-MM-DD hh24:mi:ss')
+		where id = #{roleId}
+	</update>
+
+	<update id="deleteRole">
+		update t_sys_role set is_delete = 1 where id = #{roleId}
+	</update>
+
+	<delete id="deleteRoleResource">
+		delete from t_sys_role_resource where role_id = #{roleId}
+	</delete>
+
+	<insert id="addRoleResource">
+		insert into t_sys_role_resource
+			(role_id, resource_id)
+		values
+		<foreach collection="resourceIds" item="item" index="index" separator=",">
+			(#{roleId}, #{item})
+		</foreach>
+	</insert>
+
+	<!-- 本接口必须根据角色id正序，需要用于用户第一角色判断，不可修改 -->
+	<select id="getRoleByUserId" resultMap="BaseResultMap">
+		select
+			t_sys_role.id,
+			t_sys_role.role_name,
+			t_sys_role.role_desc,
+			t_sys_role.is_predefined
+		from t_sys_role
+		left join t_sys_user_role on t_sys_user_role.role_id = t_sys_role.id
+		where t_sys_role.is_delete = 0 and t_sys_user_role.user_id = #{userId}
+		order by t_sys_role.id
+	</select>
+
+</mapper>

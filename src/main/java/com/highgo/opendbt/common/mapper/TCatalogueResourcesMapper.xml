@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.highgo.opendbt.catalogue.mapper.TCatalogueResourcesMapper">
+
+    <resultMap id="BaseResultMap" type="com.highgo.opendbt.catalogue.domain.entity.TCatalogueResources">
+        <id property="id" column="id" jdbcType="INTEGER"/>
+        <result property="courseId" column="course_id" jdbcType="INTEGER"/>
+        <result property="catalogueId" column="catalogue_id" jdbcType="INTEGER"/>
+        <result property="resourcesId" column="resources_id" jdbcType="INTEGER"/>
+        <result property="taskType" column="task_type" jdbcType="INTEGER"/>
+        <result property="processSet" column="process_set" jdbcType="NUMERIC"/>
+        <result property="downloadAuth" column="download_auth" jdbcType="SMALLINT"/>
+        <result property="isSpeed" column="is_speed" jdbcType="SMALLINT"/>
+        <result property="isTask" column="is_task" jdbcType="SMALLINT"/>
+        <result property="fastForward" column="fast_forward" jdbcType="SMALLINT"/>
+        <result property="deleteFlag" column="delete_flag" jdbcType="SMALLINT"/>
+        <result property="deleteTime" column="delete_time" jdbcType="TIMESTAMP"/>
+        <result property="deleteUser" column="delete_user" jdbcType="INTEGER"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="createUser" column="create_user" jdbcType="INTEGER"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="updateUser" column="update_user" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,course_id,catalogue_id,
+        resources_id,task_type,process_set,download_auth,
+        is_speed,is_task,fast_forward,
+        delete_flag,delete_time,delete_user,
+        create_time,create_user,update_time,
+        update_user
+    </sql>
+
+    <select id="findTCatalogueResources" resultType="com.highgo.opendbt.catalogue.domain.entity.TCatalogueResources">
+        select
+        coures.*,res.resources_type,res.resources_url,res.screenshot
+        from
+        t_catalogue_resources coures join t_resources res on coures.resources_id=res.id
+        where coures.delete_flag=0 and coures.course_id=#{courseId} and coures.catalogue_id =#{catalogueId}
+    </select>
+    <select id="findTCatalogueResourcesbyStudent"
+            resultType="com.highgo.opendbt.catalogue.domain.entity.TCatalogueResources">
+		   select
+		coures.*,
+		res.resources_type,
+		res.resources_url,
+		res.screenshot,
+		case when pro.study_status is null then 1 else pro.study_status end as study_status,
+		case when pro.duration is null then 0 else pro.duration end as duration,
+		case when pro.progress is null then 0 else pro.progress end as progress
+	from
+		t_catalogue_resources coures
+	 join t_resources res on
+		coures.resources_id = res.id
+		left join t_catalogue_process pro on coures.resources_id=pro.resources_id
+		and pro.course_id= #{param.courseId}
+		and pro.catalogue_id=#{param.catalogueId}
+		and pro.class_id= #{param.classId}
+		and pro.user_id= #{param.userId}
+	where
+		coures.delete_flag = 0
+		and coures.course_id =#{param.courseId}
+		and coures.catalogue_id =#{param.catalogueId}
+    </select>
+    <select id="findResourcesAndComplateInfo" resultType="com.highgo.opendbt.statistics.domain.model.CatalogueStatistics">
+  select
+	res.* ,
+	A.total_num,
+	A.complete_num
+from
+	(
+		select
+			cr.resources_id as resources_id,
+			case
+				when (
+					cr.task_type = 0
+				) then r.resources_name
+				else h.homework_name
+			end as resources_name,
+			case
+				when(
+					cr.task_type = 0
+				) then r.resources_type
+				else '作业'
+			end as resources_type,
+			case
+				when(
+					cr.task_type = 0
+				) then r.resources_time
+				else 0
+			end as resources_time
+		from
+			t_catalogue_resources cr
+		left join t_resources r on
+			cr.resources_id = r.ID
+			and cr.task_type = 0
+		left join t_homework h on
+			cr.resources_id = h.ID
+			and cr.task_type = 1
+		where
+			cr.delete_flag = 0
+			and cr.catalogue_id = #{item.id}
+			and cr.course_id = #{item.courseId}
+	) res
+right join (
+		select
+			pro.resources_id,
+			count (1) as total_num,
+			sum (
+				case
+					pro.study_status
+					when 2 then 1
+					else 0
+				end
+			) as complete_num
+		from
+			t_catalogue_process pro
+		where
+			pro.delete_flag = 0
+			and pro.class_id = #{classId}
+			and pro.catalogue_id = #{item.id}
+			and pro.course_id = #{item.courseId}
+		group by
+			resources_id
+	) A on
+	res.resources_id = A.resources_id
+
+    </select>
+</mapper>

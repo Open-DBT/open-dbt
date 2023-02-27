@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.highgo.opendbt.score.mapper.ScoreMapper">
+
+	<resultMap id="BaseResultMap" type="com.highgo.opendbt.score.domain.model.Score">
+		<id column="id" property="scoreId" jdbcType="INTEGER" />
+		<result column="user_id" property="userId" jdbcType="INTEGER" />
+		<result column="exercise_id" property="exerciseId" jdbcType="INTEGER" />
+		<result column="exercise_name" property="exerciseName" jdbcType="VARCHAR" />
+		<result column="create_time" property="createTime" jdbcType="VARCHAR" />
+		<result column="usage_time" property="usageTime" jdbcType="VARCHAR" />
+		<result column="answer" property="answer" jdbcType="VARCHAR" />
+		<result column="score" property="score" jdbcType="INTEGER" />
+		<result column="class_id" property="sclassId" jdbcType="INTEGER" />
+		<result column="answer_execute_time" property="answerExecuteTime" jdbcType="INTEGER" />
+		<result column="answer_length" property="answerLength" jdbcType="INTEGER" />
+	</resultMap>
+
+	<select id="getStuAnswerSituation" resultMap="BaseResultMap">
+		select
+			t_score.id,
+			t_score.user_id,
+			t_score.exercise_id,
+			t_exercise.exercise_name,
+			t_score.create_time,
+			t_score.usage_time,
+			t_score.answer,
+			t_score.score,
+			t_score.class_id,
+			t_score.answer_execute_time,
+			char_length(t_score.answer) as answer_length
+		from t_score
+		left join t_exercise on t_exercise.id = t_score.exercise_id
+		where t_score.class_id = #{sclassId}
+		and t_score.user_id = #{userId}
+		and t_exercise.delete_flag = 0
+		order by t_score.create_time desc
+	</select>
+
+	<select id="getStuExamAnswerSituation" resultMap="BaseResultMap">
+		select
+			t_exam_score.id,
+			t_exam_score.create_time,
+			t_exam_score.score,
+			t_exam_score.answer_execute_time,
+			char_length(t_exam_score.answer) as answer_length
+		from t_exam_score
+		where t_exam_score.class_id = #{sclassId}
+			and t_exam_score.exam_id = #{examId}
+			and t_exam_score.exercise_id = #{exerciseId}
+			and t_exam_score.user_id = #{userId}
+			and t_exam_score.exam_class_id = #{examClassId}
+		order by t_exam_score.create_time desc
+		limit 1
+	</select>
+
+	<select id="getStuScoreById" resultMap="BaseResultMap">
+		select
+			t_score.id,
+			t_score.user_id,
+			t_score.exercise_id,
+			t_exercise.exercise_name,
+			t_score.create_time,
+			t_score.usage_time,
+			t_score.answer,
+			t_score.score,
+			t_score.class_id,
+			t_score.answer_execute_time,
+			char_length(t_score.answer) as answer_length
+		from t_score
+		left join t_exercise on t_exercise.id = t_score.exercise_id
+		where t_score.id = #{scoreId}
+	</select>
+
+	<select id="getStuExamScoreById" resultMap="BaseResultMap">
+		select
+			t_exam_score.id,
+			t_exam_score.user_id,
+			t_exam_score.exercise_id,
+			(case
+				when (select t_exam.exercise_source from t_exam where t_exam.id = t_exam_score.exam_id) = 1
+				then (select t_public_exercise.exercise_name from t_public_exercise where t_public_exercise.id = t_exam_score.exercise_id)
+				else (select t_exercise.exercise_name from t_exercise where t_exercise.id = t_exam_score.exercise_id) end
+			) as exercise_name,
+			t_exam_score.create_time,
+			t_exam_score.usage_time,
+			t_exam_score.answer,
+			t_exam_score.score,
+			t_exam_score.class_id,
+			t_exam_score.answer_execute_time,
+			char_length(t_exam_score.answer) as answer_length
+		from t_exam_score
+		where t_exam_score.id = #{scoreId}
+	</select>
+
+	<select id="getStuStartTime" resultMap="BaseResultMap">
+		select
+			create_time
+		from t_exercise
+		left join t_score on t_exercise.id = t_score.exercise_id
+		where course_id = #{courseId} and t_score.user_id = #{userId}
+		order by t_score.create_time limit 1
+	</select>
+
+	<insert id="add">
+		insert into t_score
+			(exercise_id, user_id, create_time, usage_time, answer, score,class_id,answer_execute_time)
+		values
+			(#{exerciseId}, #{userId}, #{createTime}, #{usageTime}, #{answer}, #{score},#{sclassId},#{answerExecuteTime})
+	</insert>
+
+	<insert id="addExamScore">
+		insert into t_exam_score
+			(exercise_id, user_id, create_time, usage_time, answer, score, class_id, answer_execute_time, exam_id, exam_class_id)
+		values
+			(#{exerciseId}, #{userId}, #{createTime}, #{usageTime}, #{answer}, #{score}, #{sclassId}, #{answerExecuteTime}, #{examId}, #{examClassId})
+	</insert>
+
+	<!-- <resultMap id="ExerciseAccuracy" type="com.highgo.opendbt.score.domain.model.ExerciseAccuracy">
+		<result column="correct" property="correct" jdbcType="INTEGER" />
+		<result column="error" property="error" jdbcType="INTEGER" />
+	</resultMap> -->
+
+	<!-- <select id="accuracyByExerciseId" resultMap="ExerciseAccuracy">
+		select
+		(select count(1) from t_score ts  where exercise_id = #{exerciseId} and score = 0 )  as correct,
+		(select count(1) from t_score ts  where exercise_id = #{exerciseId} ) as error
+	</select> -->
+
+</mapper>

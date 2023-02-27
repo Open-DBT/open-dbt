@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.highgo.opendbt.exercise.mapper.TExerciseTypeMapper">
+
+    <resultMap id="BaseResultMap" type="com.highgo.opendbt.exercise.domain.entity.TExerciseType">
+            <id property="id" column="id" jdbcType="INTEGER"/>
+            <result property="typeCode" column="type_code" jdbcType="INTEGER"/>
+            <result property="typeName" column="type_name" jdbcType="VARCHAR"/>
+            <result property="typeStyle" column="type_style" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,type_code,type_name,
+        type_style
+    </sql>
+</mapper>

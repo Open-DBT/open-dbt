@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.highgo.opendbt.catalogue.mapper.TCourseCatalogueMapper">
+
+    <resultMap id="BaseResultMap" type="com.highgo.opendbt.catalogue.domain.entity.CourseCatalogue">
+        <id property="id" column="id" jdbcType="INTEGER"/>
+        <result property="courseId" column="course_id" jdbcType="INTEGER"/>
+        <result property="parentId" column="parent_id" jdbcType="INTEGER"/>
+        <result property="catalogueName" column="catalogue_name" jdbcType="VARCHAR"/>
+        <result property="deleteFlag" column="delete_flag" jdbcType="INTEGER"/>
+        <result property="startTime" column="start_time" jdbcType="TIMESTAMP"/>
+        <result property="endTime" column="end_time" jdbcType="TIMESTAMP"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
+        <result property="deleteTime" column="delete_time" jdbcType="TIMESTAMP"/>
+        <result property="deleteUser" column="delete_user" jdbcType="VARCHAR"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
+        <result property="sortNum" column="sort_num" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,course_id,parent_id,
+        catalogue_name,model,delete_flag,start_time,end_time,
+        create_time,create_user,delete_time,
+        delete_user,update_time,update_user,
+        sort_num
+    </sql>
+    <sql id="Publish_Column_List">
+        cata.id,cata.course_id,cata.parent_id,
+        cata.catalogue_name,cata.model,cata.delete_flag,cata.start_time,cata.end_time,
+        cata.create_time,cata.create_user,cata.delete_time,
+        cata.delete_user,cata.update_time,cata.update_user,
+        cata.sort_num,auth.flag as publish_status
+    </sql>
+    <select id="maxSortNum" resultType="int">
+    select max(sort_num) from t_course_catalogue
+    </select>
+
+
+    <select id="selectCataloguePublish" resultType="com.highgo.opendbt.catalogue.domain.entity.CourseCatalogue">
+        select
+        <include refid="Publish_Column_List"></include>
+        from t_course_catalogue  cata left join
+       ( select catalogue_id, flag from t_catalogue_auth_class  where  t_catalogue_auth_class.class_id=#{classId} and t_catalogue_auth_class.auth_type=#{authType} )auth on cata.id=auth.catalogue_id
+        where cata.course_id=#{courseId} and cata.delete_flag=#{deleteFlag}
+    </select>
+</mapper>

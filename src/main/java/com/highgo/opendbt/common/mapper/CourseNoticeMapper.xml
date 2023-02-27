@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.highgo.opendbt.login.mapper.CourseNoticeMapper">
+
+	<resultMap id="BaseResultMap" type="com.highgo.opendbt.login.model.CourseNotice">
+		<id column="id" property="courseNoticeId" jdbcType="INTEGER" />
+		<result column="sender_id" property="senderId" jdbcType="INTEGER" />
+		<result column="sender_type" property="senderType" jdbcType="INTEGER" />
+		<result column="receiver_id" property="receiverId" jdbcType="INTEGER" />
+		<result column="receiver_type" property="receiverType" jdbcType="INTEGER" />
+		<result column="notice_content" property="noticeContent" jdbcType="VARCHAR" />
+		<result column="notice_type" property="noticeType" jdbcType="INTEGER" />
+		<result column="create_time" property="createTime" jdbcType="VARCHAR" />
+		<result column="course_id" property="courseId" jdbcType="INTEGER" />
+		<result column="scene_id" property="sceneId" jdbcType="INTEGER" />
+		<result column="exercise_id" property="exerciseId" jdbcType="INTEGER" />
+		<result column="is_read" property="read" jdbcType="BIT" />
+	</resultMap>
+
+	<insert id="addCourseNotice">
+		insert into tcourse_notice
+			(sender_id, sender_type, receiver_id, receiver_type, notice_content, notice_type, create_time, course_id, scene_id, exercise_id)
+		values
+			(#{senderId}, #{senderType}, #{receiverId}, #{receiverType}, #{noticeContent}, #{noticeType}, to_timestamp(#{createTime}, 'yyyy-MM-DD hh24:mi:ss'), #{courseId}, #{sceneId}, #{exerciseId})
+	</insert>
+
+</mapper>

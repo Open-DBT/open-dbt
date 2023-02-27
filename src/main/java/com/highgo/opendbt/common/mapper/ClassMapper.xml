@@ -1,0 +1,521 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.highgo.opendbt.sclass.mapper.SclassMapper">
+
+	<resultMap id="BaseResultMap" type="com.highgo.opendbt.sclass.domain.entity.Sclass">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="class_name" property="className" jdbcType="VARCHAR" />
+		<result column="class_desc" property="classDesc" jdbcType="VARCHAR" />
+		<result column="class_start" property="classStart" jdbcType="VARCHAR" />
+		<result column="class_end" property="classEnd" jdbcType="VARCHAR" />
+		<result column="course_id" property="courseId" jdbcType="INTEGER" />
+		<result column="creator" property="creator" jdbcType="INTEGER" />
+
+		<result column="is_end" property="isEnd" jdbcType="INTEGER" />
+		<result column="class_is_open" property="classIsOpen" jdbcType="INTEGER" />
+		<result column="stu_new_learn_time" property="stuNewLearnTime" jdbcType="VARCHAR" />
+		<result column="progress" property="progress" jdbcType="DOUBLE" />
+
+		<result column="stu_number" property="stuNumber" jdbcType="INTEGER" />
+		<result column="knowledge_number" property="knowledgeNumber" jdbcType="INTEGER" />
+		<result column="exercise_number" property="exerciseNumber" jdbcType="INTEGER" />
+
+		<association property="course" javaType="com.highgo.opendbt.course.domain.entity.Course">
+			<id column="course_id" property="courseId" />
+			<result column="course_name" property="courseName" jdbcType="VARCHAR" />
+			<result column="course_desc" property="courseDesc" jdbcType="VARCHAR" />
+			<result column="course_outline" property="courseOutline" jdbcType="VARCHAR" />
+			<result column="knowledge_tree" property="knowledgeTree" jdbcType="VARCHAR" />
+			<result column="creator_name" property="creatorName" jdbcType="VARCHAR" />
+			<result column="create_time" property="createTime" jdbcType="VARCHAR" />
+			<result column="cover_image" property="coverImage" jdbcType="VARCHAR" />
+		</association>
+	</resultMap>
+
+	<sql id="class_column_list">
+		${class}.id,
+		${class}.class_name,
+		${class}.class_desc,
+		${class}.class_start,
+		${class}.class_end,
+		${class}.creator
+	</sql>
+
+	<sql id="course_column_list">
+		${tc}.id as course_id,
+		${tc}.course_name,
+		${tc}.course_desc,
+		${tc}.course_outline,
+		${tc}.knowledge_tree,
+		${tc}.creator,
+		${tc}.create_time,
+		${tc}.is_open,
+		${tc}.cover_image
+	</sql>
+
+	<!-- &gt;是大于  &lt;是小于  -->
+
+	<select id="getClassListByTeacherIdNotEnd" resultMap="BaseResultMap">
+		select
+			t_class.id,
+			t_class.class_name,
+			t_class.class_desc,
+			t_class.class_start,
+			t_class.class_end,
+			t_class.course_id,
+			t_class.creator,
+			t_course.course_name,
+			(case
+				when current_date &lt; t_class.class_start::date or t_class.class_end is null then -1
+				when current_date &gt;= t_class.class_start::date then 0 end
+			) as is_end
+		from t_class
+		join t_course on t_course.id = t_class.course_id
+		where t_class.creator = #{userId}
+			and (t_class.class_end is null or current_date &lt;= t_class.class_end::date)
+			and t_class.delete_flag = 0
+		order by t_class.class_start asc, t_class.id asc
+	</select>
+
+	<select id="getClassListByTeacherIdEnd" resultMap="BaseResultMap">
+		select
+			t_class.id,
+			t_class.class_name,
+			t_class.class_desc,
+			t_class.class_start,
+			t_class.class_end,
+			t_class.course_id,
+			t_class.creator,
+			t_course.course_name,
+			1 as is_end
+		from t_class
+		join t_course on t_course.id = t_class.course_id
+		where t_class.creator = #{userId}
+			and current_date &gt; t_class.class_end::date
+			and t_class.delete_flag = 0
+		order by t_class.class_end desc, t_class.id desc
+	</select>
+
+	<select id="getNoStartClassList" resultMap="BaseResultMap">
+		select
+			t_class.id,
+			t_class.class_name,
+			t_class.class_desc,
+			t_class.class_start,
+			t_class.class_end,
+			t_class.course_id,
+			t_class.creator,
+			t_course.course_name
+		from t_class, t_course
+		where t_course.id = t_class.course_id and t_class.creator = #{userId}
+			and (class_start is null or current_timestamp &lt; class_start::timestamp)
+			and t_class.delete_flag = 0
+		order by t_class.course_id desc
+	</select>
+
+	<select id="getStartClassListByCreator" resultMap="BaseResultMap">
+		select
+			<include refid="class_column_list">
+				<property name="class" value="class"/>
+			</include>	,
+			<include refid="course_column_list">
+				<property name="tc" value="tc"/>
+			</include>
+		from t_class class
+		join t_course tc on tc.id = class.course_id
+		where class.creator = #{userId}
+			and current_timestamp &gt;= class.class_start::timestamp
+			and current_timestamp &lt; class.class_end ::timestamp
+			and class.delete_flag = 0
+	</select>
+
+	<select id="getEndClassList" resultMap="BaseResultMap">
+		select
+			t_class.id,
+			t_class.class_name,
+			t_class.class_desc,
+			t_class.class_start,
+			t_class.class_end,
+			t_class.course_id,
+			t_class.creator,
+			t_course.course_name
+		from t_class, t_course
+		where t_course.id = t_class.course_id and t_class.creator = #{userId}
+			and current_timestamp &gt; class_end::timestamp
+			<!-- current_timestamp > class_end::timestamp-->
+			and t_class.delete_flag = 0
+		order by t_class.course_id desc
+	</select>
+
+	<insert id="addClass" useGeneratedKeys="true" keyProperty="id">
+		insert into t_class
+			(class_name, class_desc, class_start, class_end, creator, course_id)
+		values
+			(#{className}, #{classDesc}, #{classStart}, #{classEnd}, #{creator}, #{courseId})
+	</insert>
+
+	<update id="updateClass">
+		update t_class
+		<set>
+			<if test="className != null">
+	            class_name = #{className},
+	        </if>
+	        <if test="classDesc != null">
+	            class_desc = #{classDesc},
+	        </if>
+	        <if test="classStart != null">
+	            class_start = #{classStart},
+	        </if>
+	        <if test="classEnd != null">
+	            class_end = #{classEnd},
+	        </if>
+	        course_id = #{courseId}
+		</set>
+		where id = #{id}
+	</update>
+
+	<select id="getSclassById" resultMap="BaseResultMap">
+		select
+			t_class.id,
+			t_class.class_name,
+			t_class.class_desc,
+			t_class.class_start,
+			t_class.class_end,
+			t_class.course_id,
+			t_course.course_name,
+			t_class.creator,
+			t_class.class_is_open,
+			(case
+				when
+					current_date &lt; t_class.class_start::date
+				then -1 <!-- 未开始班级 -->
+				when
+					current_date &gt;= t_class.class_start::date
+					and current_date &lt;= t_class.class_end::date
+				then 0 <!-- 进行中班级 -->
+				when
+					current_date &gt; t_class.class_end::date
+				then 1 <!-- 已结束班级 -->
+			end
+			) as is_end
+		from t_class
+		join t_course on t_course.id = t_class.course_id
+		where t_class.id = #{sclassId}
+	</select>
+
+	<select id="getSclassInfoById" resultMap="BaseResultMap">
+		select
+			<include refid="class_column_list">
+				<property name="class" value="class"/>
+			</include>	,
+			<include refid="course_column_list">
+				<property name="tc" value="tc"/>
+			</include>,
+			(case
+				when
+					current_timestamp &lt; class.class_start::timestamp
+				then -1
+				when
+					current_timestamp &gt;= class.class_start::timestamp
+					and current_timestamp &lt;= class.class_end::timestamp
+				then 0
+				when
+					current_timestamp &gt; class.class_end::timestamp
+				then 1
+			end) as is_end,
+			(select user_name from t_sys_user where t_sys_user.id = class.creator) as creator_name,
+			((select count(1) from t_class_stu, t_sys_user where t_class_stu.sclass_id = #{sclassId} and t_class_stu.user_id = t_sys_user.id) - 1) as stu_number,
+			(select count(distinct t_exercise_knowledge.knowledge_id)  from t_exercise_knowledge where t_exercise_knowledge.course_id = class.course_id and t_exercise_knowledge.exercise_id in (select t_new_exercise.id from t_new_exercise where t_new_exercise.course_id = class.course_id and t_new_exercise.delete_flag = 0)) as knowledge_number,
+			(select count(1) from t_new_exercise where t_new_exercise.course_id = class.course_id and t_new_exercise.delete_flag = 0) as exercise_number
+		from t_class class
+		join t_course tc on tc.id = class.course_id
+		where class.id = #{sclassId}
+	</select>
+
+	<!-- t_class_stu -->
+	<resultMap id="StuResultMap" type="com.highgo.opendbt.sclass.domain.model.SclassStu">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="sclass_id" property="sclassId" jdbcType="INTEGER" />
+		<result column="user_id" property="userId" jdbcType="INTEGER" />
+	</resultMap>
+
+	<insert id="addSclassStu" useGeneratedKeys="true">
+		insert into t_class_stu (sclass_id, user_id) values (#{sclassId}, #{userId})
+	</insert>
+
+	<select id="getSclassStuByUserId" resultMap="StuResultMap">
+		select
+			sclass_id,
+			user_id
+		from t_class_stu
+		where t_class_stu.sclass_id = #{sclassId} and user_id = #{userId}
+	</select>
+
+	<select id="getSclassByStuId" resultMap="BaseResultMap">
+		select
+			<include refid="class_column_list">
+				<property name="class" value="class"/>
+			</include>	,
+			<include refid="course_column_list">
+				<property name="tc" value="tc"/>
+			</include>
+		from t_class class
+		join t_course tc on tc.id = class.course_id
+		where class.id in (select sclass_id from t_class_stu tcs where user_id = #{userId})  order by class.class_end desc
+	</select>
+
+	<select id="getSclassStartByStuId" resultMap="BaseResultMap">
+		select
+			<include refid="class_column_list">
+				<property name="class" value="class"/>
+			</include>	,
+			<include refid="course_column_list">
+				<property name="tc" value="tc"/>
+			</include>
+		from t_class class
+		join t_course tc on tc.id = class.course_id
+		where class.id in (select sclass_id from t_class_stu tcs where user_id = #{userId})
+			and current_timestamp &gt;= class.class_start::timestamp
+			and current_timestamp &lt; class.class_end ::timestamp
+			<!-- and current_timestamp >= tc.class_start::timestamp -->
+			<!-- and current_timestamp <= tc.class_end ::timestamp -->
+	</select>
+
+	<select id="getSclassEndByStuId" resultMap="BaseResultMap">
+		select
+			<include refid="class_column_list">
+				<property name="class" value="class"/>
+			</include>	,
+			<include refid="course_column_list">
+				<property name="tc" value="tc"/>
+			</include>
+		from t_class class
+		join t_course tc on tc.id = class.course_id
+		where class.id in (select sclass_id from t_class_stu tcs where user_id = #{userId})
+			and current_timestamp &gt; class.class_end ::timestamp
+			<!-- and current_timestamp > class.class_end ::timestamp -->
+	</select>
+
+	<select id="getAllSclassByStuId" resultMap="BaseResultMap">
+		select
+			<include refid="class_column_list">
+				<property name="class" value="class"/>
+			</include>	,
+			<include refid="course_column_list">
+				<property name="tc" value="tc"/>
+			</include>,
+			(select user_name from t_sys_user where t_sys_user.id = class.creator) as creator_name,
+			(case
+				when
+					current_date &lt; class.class_start::date
+				then -1
+				when
+					current_date &gt;= class.class_start::date
+					and current_date &lt;= class.class_end::date
+				then 0
+				when
+					current_date &gt; class.class_end::date
+				then 1
+			end) as is_end
+		from t_class class
+		join t_course tc on tc.id = class.course_id
+		where class.id in (select sclass_id from t_class_stu tcs where user_id = #{userId})
+			and ((current_date &gt;= class.class_start::date and class.class_is_open = 1) or class.creator = #{userId})
+			<!-- and current_date >= tc.class_start::date -->
+			and class.delete_flag = 0
+		order by class_end desc, id desc
+	</select>
+
+	<select id="getAllSclassProgressByStuId" resultMap="BaseResultMap">
+		select * from (
+			select
+				<include refid="class_column_list">
+					<property name="class" value="class"/>
+				</include>	,
+				<include refid="course_column_list">
+					<property name="tc" value="tc"/>
+				</include>,
+				(select user_name from t_sys_user where t_sys_user.id = class.creator) as creator_name,
+				(case
+					when
+						current_date &lt; class.class_start::date
+					then -1
+					when
+						current_date &gt;= class.class_start::date
+						and current_date &lt;= class.class_end::date
+					then 0
+					when
+						current_date &gt; class.class_end::date
+					then 1
+				end) as is_end,
+				(case
+					when (select count(1) from t_new_exercise where t_new_exercise.course_id = class.course_id and t_new_exercise.delete_flag = 0) = 0 then 0
+					else round(((select count(1) from (select exercise_id from t_score where t_score.user_id =#{userId} and t_score.class_id = class.id and t_score.exercise_id in (select t_new_exercise.id from t_new_exercise where t_new_exercise.course_id = class.course_id and t_new_exercise.delete_flag = 0) group by t_score.exercise_id) as answer_count)
+					*
+					1.0 /
+					(select count(1) from t_new_exercise where t_new_exercise.course_id = class.course_id and t_new_exercise.delete_flag = 0) * 100), 2) end
+				) as progress,
+				(
+					select t_score.create_time from t_score where t_score.user_id = #{userId} and t_score.class_id = class.id order by t_score.create_time desc limit 1
+				) as stu_new_learn_time
+			from t_class class
+			join t_course tc on tc.id = class.course_id
+			where class.id in (select sclass_id from t_class_stu tcs where user_id = #{userId})
+				and ((current_date &gt;= class.class_start::date and class.class_is_open = 1) or class.creator = #{userId})
+				<!-- and current_date >= tc.class_start::date -->
+				and class.delete_flag = 0
+		) t
+		where t.progress != 0
+		order by t.stu_new_learn_time desc, t.id desc
+	</select>
+
+	<select id="getSclassAllStuProgressList" resultMap="BaseResultMap">
+		select
+			(case
+			when (select count(1) from t_new_exercise where t_new_exercise.course_id = #{courseId} and t_new_exercise.delete_flag = 0) = 0 then 0
+			else round(((select count(1) from (select exercise_id from t_score
+			where t_score.user_id = t_sys_user.id and t_score.class_id = #{sclassId}
+			and t_score.exercise_id in (select t_new_exercise.id from t_new_exercise where t_new_exercise.course_id = #{courseId} and t_new_exercise.delete_flag = 0)
+			group by t_score.exercise_id) as answer_count)
+			* 1.0 /
+			(select count(1) from t_new_exercise where t_new_exercise.course_id = #{courseId} and t_new_exercise.delete_flag = 0)
+			* 100), 2) end) as progress
+		from t_sys_user
+		where t_sys_user.id != #{userId}
+		and t_sys_user.id not in (select t_class.creator from t_class where t_class.id = #{sclassId})
+		and t_sys_user.id in (select t_class_stu.user_id from t_class_stu where t_class_stu.sclass_id = #{sclassId})
+		order by progress
+	</select>
+
+	<!-- <delete id="deleteSclassById">
+		delete from t_class where id = #{id}
+	</delete> -->
+	<update id="deleteSclassById">
+		update t_class set delete_flag = 1, delete_time = current_timestamp where id = #{id}
+	</update>
+
+	<delete id="deleteSclassAllStu">
+		delete from t_class_stu where sclass_id = #{sclassId}
+	</delete>
+
+	<delete id="deleteSclassAllStuScore">
+		delete from t_score where class_id = #{sclassId}
+	</delete>
+
+	<delete id="deleteSclassStu">
+		delete from t_class_stu where user_id = #{userId} and sclass_id = #{sclassId}
+	</delete>
+
+	<delete id="batchDelSclassStu">
+		delete from t_class_stu where user_id in
+		<foreach item="item" index="index" collection="userId" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+	and sclass_id = #{sclassId}
+	</delete>
+
+	<select id="getSclassByTeaId" resultMap="BaseResultMap">
+		select
+			t_class.id,
+			t_class.class_name,
+			t_class.class_desc,
+			t_class.class_start,
+			t_class.class_end,
+			t_class.course_id,
+			t_class.creator,
+			<include refid="course_column_list">
+				<property name="tc" value="tc"/>
+			</include>
+		from t_class, t_course tc
+		where tc.id = t_class.course_id and t_class.creator = #{userId} and t_class.delete_flag = 0
+		order by t_class.course_id desc
+	</select>
+
+	<select id="getCourseProgressByStu" resultMap="BaseResultMap">
+		select
+			<include refid="course_column_list">
+				<property name="tc" value="tc"/>
+			</include>,
+			(case when (select count(1) from t_new_exercise where t_new_exercise.exercise_status=0 and  t_new_exercise.course_id = tc.id and t_new_exercise.delete_flag = 0) = 0 then 100
+			else round(((select count(1) from (select t_score.exercise_id from t_score where t_score.user_id = #{userId} and t_score.class_id = #{sclassId} and t_score.exercise_id in (select t_new_exercise.id from t_new_exercise where t_new_exercise.exercise_status=0 and t_new_exercise.course_id = tc.id and t_new_exercise.delete_flag = 0) group by t_score.exercise_id) as answer_count)
+			* 1.0 /
+			(select count(1) from t_new_exercise where t_new_exercise.exercise_status=0 and t_new_exercise.course_id = tc.id and t_new_exercise.delete_flag = 0)
+			* 100), 2) end) as progress
+		from t_course tc
+		where tc.id = #{courseId}
+	</select>
+
+	<!-- &gt;是大于  &lt;是小于  -->
+	<select id="getStartSclassByCourseId" resultMap="BaseResultMap">
+		select id
+		from t_class
+		where t_class.course_id = #{courseId}
+		and current_date &gt;= t_class.class_start::date
+		and current_date &lt;= t_class.class_end::date
+		and t_class.delete_flag = 0
+	</select>
+
+	<select id="getSclassByCourseId" resultMap="BaseResultMap">
+		select
+			<include refid="class_column_list">
+				<property name="class" value="class"/>
+			</include>
+		from t_class class
+		where class.course_id = #{courseId} and class.delete_flag = 0
+	</select>
+
+	<update id="updateSclassIsOpen">
+		update t_class set class_is_open = #{classIsOpen} where id = #{sclassId}
+	</update>
+
+
+	<select id="getClassByLoginUserAndCourse" resultMap="BaseResultMap">
+		select
+			t_class.id,
+			t_class.class_name,
+			t_class.class_desc,
+			t_class.class_start,
+			t_class.class_end,
+			t_class.course_id,
+			t_class.creator,
+			t_course.course_name,
+			(case
+				when current_date &lt; t_class.class_start::date or t_class.class_end is null then -1
+				when current_date &gt;= t_class.class_start::date then 0 end
+			) as is_end
+		from t_class
+		join t_course on t_course.id = t_class.course_id
+		where t_class.creator = #{userId}
+			and t_class.course_id = #{course_id}
+			/*and (t_class.class_end is null or current_date &lt;= t_class.class_end::date)*/
+			and t_class.delete_flag = 0
+		order by t_class.class_start asc, t_class.id asc
+	</select>
+    <select id="findClassByStuAndCourse" resultMap="BaseResultMap">
+		SELECT
+			t_class.*
+		FROM
+			t_class
+			JOIN t_class_stu ON t_class.ID = t_class_stu.sclass_id
+		WHERE
+			t_class_stu.user_id =#{ user_id }
+			AND t_class.course_id =#{ course_id}
+			/*AND (t_class.class_end is null or current_date &lt;= t_class.class_end::date)*/
+			AND t_class.class_is_open=1
+			AND t_class.delete_flag=0
+	</select>
+	<select id="getActiveClassByStu" resultType="com.highgo.opendbt.sclass.domain.entity.Sclass">
+		select
+			*
+		from
+			t_class a
+		join t_class_stu b on
+			a.id = b.sclass_id
+		where
+			b.user_id = #{user_id}
+			and a.delete_flag = 0
+			and a.course_id = #{course_id}
+			/*and current_date &gt;= a.class_start::timestamp
+			and current_date &lt;= a.class_end ::timestamp*/
+	</select>
+</mapper>

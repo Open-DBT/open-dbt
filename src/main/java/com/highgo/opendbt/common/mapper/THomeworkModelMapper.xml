@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.highgo.opendbt.homeworkmodel.mapper.THomeworkModelMapper">
+
+    <resultMap id="BaseResultMap" type="com.highgo.opendbt.homeworkmodel.domain.entity.THomeworkModel">
+        <id property="id" column="id" jdbcType="INTEGER"/>
+        <result property="courseId" column="course_id" jdbcType="INTEGER"/>
+        <result property="parentId" column="parent_id" jdbcType="INTEGER"/>
+        <result property="elementType" column="element_type" jdbcType="INTEGER"/>
+        <result property="tgp" column="tgp" jdbcType="DOUBLE"/>
+        <result property="modelName" column="model_name" jdbcType="VARCHAR"/>
+        <result property="authType" column="auth_type" jdbcType="INTEGER"/>
+        <result property="grandingStandard" column="granding_standard" jdbcType="INTEGER"/>
+        <result property="classify" column="classify" jdbcType="INTEGER"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="createUser" column="create_user" jdbcType="INTEGER"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="updateUser" column="update_user" jdbcType="INTEGER"/>
+        <result property="deleteFlag" column="delete_flag" jdbcType="SMALLINT"/>
+        <result property="deleteTime" column="delete_time" jdbcType="TIMESTAMP"/>
+        <result property="deleteUser" column="delete_user" jdbcType="INTEGER"/>
+    </resultMap>
+    <resultMap id="selectResultMap" type="com.highgo.opendbt.homeworkmodel.domain.entity.THomeworkModel">
+        <id property="id" column="id" jdbcType="INTEGER"/>
+        <result property="courseId" column="course_id" jdbcType="INTEGER"/>
+        <result property="parentId" column="parent_id" jdbcType="INTEGER"/>
+        <result property="elementType" column="element_type" jdbcType="INTEGER"/>
+        <result property="tgp" column="tgp" jdbcType="DOUBLE"/>
+        <result property="modelName" column="model_name" jdbcType="VARCHAR"/>
+        <result property="authType" column="auth_type" jdbcType="INTEGER"/>
+        <result property="grandingStandard" column="granding_standard" jdbcType="INTEGER"/>
+        <result property="classify" column="classify" jdbcType="INTEGER"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="createUser" column="create_user" jdbcType="INTEGER"/>
+        <result property="userName" column="user_name" jdbcType="VARCHAR"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="updateUser" column="update_user" jdbcType="INTEGER"/>
+        <result property="deleteFlag" column="delete_flag" jdbcType="SMALLINT"/>
+        <result property="deleteTime" column="delete_time" jdbcType="TIMESTAMP"/>
+        <result property="deleteUser" column="delete_user" jdbcType="INTEGER"/>
+        <result property="publishStatus" column="publish_status" jdbcType="INTEGER"/>
+        <result property="exist" column="exist" jdbcType="INTEGER"/>
+
+    </resultMap>
+
+    <resultMap id="HomeWorkModelTreeResultMap" type="com.highgo.opendbt.homeworkmodel.domain.entity.THomeworkModel">
+        <id property="id" column="id" jdbcType="INTEGER"/>
+        <result property="courseId" column="course_id" jdbcType="INTEGER"/>
+        <result property="parentId" column="parent_id" jdbcType="INTEGER"/>
+        <result property="modelName" column="model_name" jdbcType="VARCHAR"/>
+        <association property="childrens"
+                     select="com.highgo.opendbt.homeworkmodel.mapper.THomeworkModelMapper.getHomeWorkModelTreeChildren"
+                     column="id"/>
+    </resultMap>
+    <resultMap id="ClassResultMap" type="com.highgo.opendbt.homeworkmodel.domain.model.PublishClass">
+        <id property="key" column="id" jdbcType="INTEGER"/>
+        <result property="title" column="class_name" jdbcType="VARCHAR"/>
+        <collection property="children"
+                    select="com.highgo.opendbt.homeworkmodel.mapper.THomeworkModelMapper.getPublishStudentList"
+                    column="id"/>
+    </resultMap>
+    <resultMap id="StudentResultMap" type="com.highgo.opendbt.homeworkmodel.domain.model.PublishClass">
+        <id property="key" column="id" jdbcType="INTEGER"/>
+        <result property="title" column="user_name" jdbcType="VARCHAR"/>
+        <result property="code" column="code" jdbcType="VARCHAR"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        id,course_id,parent_id,tgp,
+        element_type,model_name,auth_type,
+        granding_standard,classify,create_time,
+        create_user,update_time,update_user,
+        delete_flag,delete_time,delete_user
+    </sql>
+    <select id="getIsBandingModel" resultType="int">
+        select m.id from t_homework_model m join t_model_exercise e on m.id=e.model_id where e.exercise_id=#{exerciseId} and m.delete_flag=0
+    </select>
+
+    <select id="listHomeworkModel" resultMap="selectResultMap">
+        select m.*,u.user_name,case when count_id>0 then 1 else 0 end as publish_status,case when count_exercise>0 then 1 else 0 end as exist
+        from t_homework_model m
+        left join (select model_id,count(id) as count_exercise from t_model_exercise where delete_flag=0 group by model_id ) e
+        on m.id=e.model_id
+        left join (select model_id,count(id) as count_id from t_homework where delete_flag=0 group by model_id) h on m.id=h.model_id left join t_sys_user u on m.create_user=u.id
+        where
+        m.delete_flag=0
+        and course_id=#{param.courseId}
+        and m.parent_id=#{param.parentId}
+        <if test="param.modelName!=null and param.modelName!=''">
+            and model_name like '%${param.modelName}%'
+        </if>
+    </select>
+
+    <select id="getHomeWorkModelCatalogueTree" resultMap="HomeWorkModelTreeResultMap">
+         select m.id,m.parent_id,m.model_name from t_homework_model m  where m.delete_flag=0 and m.element_type=1
+        and m.course_id=#{courseId}
+    </select>
+
+    <select id="getHomeWorkModelTreeChildren" resultMap="HomeWorkModelTreeResultMap">
+          select m.id,m.parent_id,m.model_name from t_homework_model m  where m.element_type=1 and m.parent_id=#{parentId}
+    </select>
+    <select id="getPublishList" resultMap="ClassResultMap">
+	select
+			t_class.id as id,
+			t_class.class_name as class_name
+		from t_class
+		join t_course on t_course.id = t_class.course_id
+		where t_class.creator = #{userId}
+			and t_class.course_id = #{courseId}
+			/*and (t_class.class_end is null or current_date &lt;= t_class.class_end::date)*/
+			and t_class.delete_flag = 0
+		order by t_class.class_start asc, t_class.id asc
+    </select>
+
+
+    <select id="getPublishStudentList" resultMap="StudentResultMap">
+        select
+        tsu.id,
+        tsu.user_name,
+        tsu.code
+        from
+        t_class tc ,
+        t_class_stu tcs ,
+        t_sys_user tsu
+        where 1=1
+        and tcs.user_id = tsu.id
+        and tc.id = tcs.sclass_id
+        and tsu.id != tc.creator
+        and tc.id = #{id}
+        order by tsu.id desc
+    </select>
+</mapper>

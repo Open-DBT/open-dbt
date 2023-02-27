@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.highgo.opendbt.process.mapper.TCatalogueProcessMapper">
+
+    <resultMap id="BaseResultMap" type="com.highgo.opendbt.process.domain.entity.TCatalogueProcess">
+        <id property="id" column="id" jdbcType="INTEGER"/>
+        <result property="courseId" column="course_id" jdbcType="INTEGER"/>
+        <result property="catalogueId" column="catalogue_id" jdbcType="INTEGER"/>
+        <result property="contentsId" column="contents_id" jdbcType="INTEGER"/>
+        <result property="classId" column="class_id" jdbcType="INTEGER"/>
+        <result property="userId" column="user_id" jdbcType="INTEGER"/>
+        <result property="resourcesId" column="resources_id" jdbcType="INTEGER"/>
+        <result property="studyStatus" column="study_status" jdbcType="SMALLINT"/>
+        <result property="progress" column="progress" jdbcType="INTEGER"/>
+        <result property="duration" column="duration" jdbcType="BIGINT"/>
+        <result property="taskType" column="task_type" jdbcType="INTEGER"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="updateUser" column="update_user" jdbcType="INTEGER"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="createUser" column="create_user" jdbcType="INTEGER"/>
+        <result property="deleteFlag" column="delete_flag" jdbcType="SMALLINT"/>
+        <result property="deleteTime" column="delete_time" jdbcType="TIMESTAMP"/>
+        <result property="deleteUser" column="delete_user" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,course_id,catalogue_id,
+        contents_id,class_id,user_id,
+        resources_id,study_status,progress,
+        duration,task_type,update_time,update_user,
+        create_time,create_user,delete_flag,
+        delete_time,delete_user
+    </sql>
+    <select id="statisticslook" resultType="com.highgo.opendbt.process.domain.entity.TCatalogueProcess">
+        SELECT
+        pro.id,
+        pro.course_id,
+        pro.catalogue_id,
+        pro.class_id,
+        pro.user_id,
+        pro.resources_id,
+        pro.study_status,
+        pro.progress,
+        pro.duration,
+        pro.task_type,
+        case
+        when (
+        pro.study_status = 2
+        ) then pro.update_time
+        else null
+        end as complete_time,
+        u.user_name,
+        u.code,
+        case
+        when (
+        pro.task_type = 0
+        ) then res.resources_name
+        else h.homework_name
+        end as resources_name,
+        case
+        when(
+        pro.task_type = 0
+        ) then res.resources_time
+        else 0
+        end as resources_time,
+        case
+        when(
+        pro.duration is null
+        ) then 0
+        when (
+        resources_time = 0
+        ) then 0
+        when (
+        duration >= resources_time
+        ) then 100
+        else round( pro.duration * 100.0 / resources_time, 0 )
+        end as proportion
+        FROM
+        t_catalogue_process pro
+        left join t_resources res on
+        pro.resources_id = res. ID
+        and pro.task_type = 0
+        left join t_homework h on
+        pro.resources_id = h. ID
+        and pro.task_type = 1
+        JOIN t_sys_user u ON pro.user_id = u.ID
+        WHERE
+        pro.delete_flag=0
+        AND pro.catalogue_id =#{param.catalogueId}
+        AND pro.class_id =#{param.classId}
+        AND pro.course_id =#{param.courseId}
+        <if test="param.userName != null  and param.userName !=''">
+            AND u.user_name like '%${param.userName}%'
+        </if>
+        <if test="param.code != null and param.code !=''">
+            AND u.code = #{param.code}
+        </if>
+        AND pro.resources_id=#{param.resourcesId}
+        <if test=" param.sortField != null and param.sortType !=null">
+            order by ${param.sortField} ${param.sortType}
+        </if>
+    </select>
+    <select id="statisticsStudent" resultType="com.highgo.opendbt.statistics.domain.model.StudentStatistics">
+        SELECT
+        process.*,
+        u.user_name,
+        u.code
+        FROM
+        (
+        SELECT
+        user_id,
+        COUNT ( 1 ) AS count_num,
+        SUM ( CASE study_status WHEN 2 THEN 1 ELSE 0 END ) AS complete_num
+        FROM
+        t_catalogue_process
+        RIGHT JOIN t_catalogue_resources res ON t_catalogue_process.catalogue_id = res.catalogue_id
+        AND t_catalogue_process.course_id = res.course_id
+        AND t_catalogue_process.resources_id = res.resources_id
+
+        WHERE
+        t_catalogue_process.delete_flag=0
+        AND res.delete_flag = 0
+        AND t_catalogue_process.class_id = #{ classId }
+        AND t_catalogue_process.catalogue_id in
+        <foreach collection="catalogueIds" item="item" index="index" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+        AND t_catalogue_process.course_id = #{ courseId}
+        GROUP BY
+        user_id
+        ) process
+        JOIN t_sys_user u ON process.user_id = u.ID
+        WHERE
+        1 = 1
+        <if test="userName != null and userName != ''">
+            AND user_name like '%${userName}%'
+        </if>
+        <if test="code != null and code !=''">
+            AND code = #{code}
+        </if>
+    </select>
+    <select id="findResourcesProcessByUser"
+            resultType="com.highgo.opendbt.statistics.domain.model.StudentCatalogueStatistics">
+        SELECT
+	t_class.ID AS class_id,
+	t_class.class_name,
+	t_sys_user.user_name,
+	t_sys_user.code,
+	res.resources_id as resources_id,
+	case
+		when (
+			res.task_type = 0
+		) then t_resources.resources_name
+		else h.homework_name
+	end as resources_name,
+	case
+		when(
+			res.task_type = 0
+		) then t_resources.resources_type
+		else '作业'
+	end as resources_type,
+	t_catalogue_process.duration,
+	t_catalogue_process.study_status,
+CASE
+
+		WHEN ( t_catalogue_process.duration >= t_resources.resources_time ) THEN
+		100 ELSE ROUND( t_catalogue_process.duration * 100.0 / t_resources.resources_time, 0 )
+	END AS proportion,
+	case
+	when (
+	t_catalogue_process.study_status = 2
+	) then t_catalogue_process.update_time
+	else null
+	end as complete_time
+FROM
+	t_catalogue_process
+	JOIN t_sys_user ON t_catalogue_process.user_id = t_sys_user.
+	ID JOIN t_class ON t_catalogue_process.class_id = t_class.
+	ID RIGHT JOIN t_catalogue_resources res ON t_catalogue_process.catalogue_id = res.catalogue_id
+	AND t_catalogue_process.course_id = res.course_id
+	AND t_catalogue_process.resources_id = res.resources_id
+	AND res.delete_flag = 0
+	left join t_resources on
+	res.resources_id = t_resources.ID
+	and res.task_type = 0
+	left join t_homework h on
+	res.resources_id = h.ID
+	and res.task_type = 1
+WHERE
+	res.delete_flag = 0
+	AND t_catalogue_process.delete_flag=0
+	AND t_catalogue_process.class_id = #{classId}
+	AND t_catalogue_process.catalogue_id = #{item.id}
+	AND t_catalogue_process.course_id = #{item.courseId}
+	AND t_catalogue_process.user_id =#{userId}
+    </select>
+
+
+    <select id="countProcess" resultType="com.highgo.opendbt.catalogue.domain.entity.CourseCatalogue">
+		SELECT COUNT
+			( CASE WHEN study_status = 2 THEN 1 ELSE NULL END ) AS complete_num,
+			COUNT ( 1 ) AS total_num
+		FROM
+			t_catalogue_process
+		WHERE
+			( delete_flag = 0 AND course_id = #{param.courseId} AND catalogue_id = #{param.catalogueId} AND class_id = #{param.classId} )
+	</select>
+
+    <insert id="saveBatch" parameterType="java.util.List" keyProperty="id" useGeneratedKeys="true">
+        INSERT INTO t_catalogue_process (
+        course_id,catalogue_id,
+        class_id,user_id,
+        resources_id,study_status,progress,
+        duration,task_type,
+        create_time,create_user,delete_flag,
+        delete_time,delete_user) values
+        <foreach collection="param" item="item" index="index" separator=",">
+            ( #{item.courseId}, #{item.catalogueId}, #{item.classId}, #{item.userId}, #{item.resourcesId},
+            #{item.studyStatus}, #{item.progress}, #{item.duration}, #{item.taskType}, #{item.createTime},
+            #{item.createUser}
+            , #{item.deleteFlag}, #{item.deleteTime}, #{item.deleteUser})
+        </foreach>
+    </insert>
+
+    <update id="updateBatch" parameterType="java.util.Map">
+        <foreach collection="param" separator=";" item="cus">
+            update t_catalogue_process set
+            id = #{cus.id},
+            course_id = #{cus.courseId},
+            catalogue_id = #{cus.catalogueId},
+            contents_id = #{cus.contentsId},
+            class_id = #{cus.classId},
+            user_id = #{cus.userId},
+            resources_id = #{cus.resourcesId},
+            study_status = #{cus.studyStatus},
+            progress = #{cus.progress},
+            duration = #{cus.duration},
+            task_type = #{cus.taskType},
+            update_time = #{cus.updateTime},
+            update_user = #{cus.updateUser},
+            create_time = #{cus.createTime},
+            create_user = #{cus.createUser},
+            delete_flag = #{cus.deleteFlag},
+            delete_time = #{cus.deleteTime},
+            delete_user = #{cus.deleteUser}
+            where id = #{cus.id}
+        </foreach>
+    </update>
+</mapper>

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.highgo.opendbt.student.mapper.StudentExamMapper">
+
+	<resultMap id="ExamExerciseResultMap" type="com.highgo.opendbt.student.domain.model.StudentExamExercise">
+		<id column="id" property="exerciseId" jdbcType="INTEGER" />
+		<result column="exercise_name" property="exerciseName" jdbcType="VARCHAR" />
+		<result column="exercise_desc" property="exerciseDesc" jdbcType="VARCHAR" />
+		<result column="exercise_score" property="exerciseScore" jdbcType="INTEGER" />
+
+		<result column="scene_id" property="sceneId" jdbcType="INTEGER" />
+		<result column="scene_name" property="sceneName" jdbcType="VARCHAR" />
+		<result column="scene_desc" property="sceneDesc" jdbcType="VARCHAR" />
+		<result column="init_shell" property="initShell" jdbcType="VARCHAR" />
+
+		<result column="exercise_situation" property="exerciseSituation" jdbcType="INTEGER" />
+
+		<result column="student_answer" property="studentAnswer" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<select id="getExamExerciseList" resultMap="ExamExerciseResultMap">
+		select
+			te.id,
+			te.exercise_name,
+			tee.score as exercise_score
+			<if test="examClassId != -1">
+				,
+				(case
+					when (select t_exam_score.score from t_exam_score
+						where t_exam_score.exercise_id = te.id
+							and t_exam_score.class_id = #{sclassId}
+							and t_exam_score.user_id = #{userId}
+							and t_exam_score.exam_id = #{examId}
+							and t_exam_score.exam_class_id = #{examClassId}
+						limit 1
+					) is null then -1
+					else (select t_exam_score.score from t_exam_score
+						where t_exam_score.exercise_id = te.id
+							and t_exam_score.class_id = #{sclassId}
+							and t_exam_score.user_id = #{userId}
+							and t_exam_score.exam_id = #{examId}
+							and t_exam_score.exam_class_id = #{examClassId}
+						order by t_exam_score.create_time desc
+						limit 1
+					) end
+				) as exercise_situation
+	    	</if>
+		from
+		<if test="exerciseSource == 0">
+			t_exercise te
+	    </if>
+	    <if test="exerciseSource == 1">
+	    	t_public_exercise te
+	    </if>
+	    left join t_exam_exercise tee on tee.exercise_id = te.id
+	    where te.delete_flag = 0
+	    	and tee.exam_id = #{examId}
+	    order by tee.ordinal
+	</select>
+
+	<select id="getExamExerciseById" resultMap="ExamExerciseResultMap">
+		select
+			te.id,
+			te.exercise_name,
+			te.exercise_desc,
+			(select
+				t_exam_exercise.score
+			from t_exam_exercise
+			where t_exam_exercise.exercise_id = #{exerciseId}
+				and t_exam_exercise.exam_id = #{examId}
+			) as exercise_score,
+			te.scene_id,
+			ts.scene_name,
+			ts.scene_desc,
+			ts.init_shell,
+			(select t_exam_score.answer from t_exam_score
+				where t_exam_score.exercise_id = te.id
+					and t_exam_score.class_id = #{sclassId}
+					and t_exam_score.user_id = #{userId}
+					and t_exam_score.exam_id = #{examId}
+					and t_exam_score.exam_class_id = #{examClassId}
+				order by t_exam_score.create_time desc
+				limit 1
+			) as student_answer
+		from
+		<if test="exerciseSource == 0">
+			t_exercise te
+			left join t_scene ts on te.scene_id = ts.id
+	    </if>
+	    <if test="exerciseSource == 1">
+	    	t_public_exercise te
+	    	left join t_public_scene ts on te.scene_id = ts.id
+	    </if>
+	    where te.id = #{exerciseId}
+	</select>
+
+</mapper>

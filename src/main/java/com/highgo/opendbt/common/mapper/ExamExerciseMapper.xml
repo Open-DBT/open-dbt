@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.highgo.opendbt.teacher.mapper.ExamExerciseMapper">
+
+	<resultMap id="BaseResultMap" type="com.highgo.opendbt.teacher.domain.model.ExamExercise">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="exam_id" property="examId" jdbcType="INTEGER" />
+		<result column="exercise_id" property="exerciseId" jdbcType="INTEGER" />
+		<result column="ordinal" property="ordinal" jdbcType="INTEGER" />
+		<result column="score" property="score" jdbcType="INTEGER" />
+
+		<association property="exercise" javaType="com.highgo.opendbt.course.domain.entity.Exercise">
+			<id column="id" property="exerciseId" jdbcType="INTEGER" />
+			<result column="exercise_name" property="exerciseName" jdbcType="VARCHAR" />
+		</association>
+	</resultMap>
+
+	<select id="getExamExerciseByExamId" resultMap="BaseResultMap">
+		select
+			tee.*,
+			te.id as exerciseId,
+			te.exercise_name
+		from t_exam_exercise tee
+		<if test="exerciseSource == 0">
+			left join t_exercise te on tee.exercise_id = te.id
+	    </if>
+	    <if test="exerciseSource == 1">
+	    	left join t_public_exercise te on tee.exercise_id = te.id
+	    </if>
+		where tee.exam_id = #{examId}
+		order by ordinal asc
+	</select>
+
+	<select id="getExamExerciseById" resultMap="BaseResultMap">
+		select * from t_exam_exercise where id = #{id}
+	</select>
+
+	<insert id="addExamExerciseArray">
+		insert into t_exam_exercise
+			(exam_id, exercise_id,ordinal)
+		values
+		<foreach collection="exerciseIds" item="item" index="index" separator=",">
+			(#{examId}, #{item},#{orderIndex} + #{index}+1)
+		</foreach>
+	</insert>
+
+	<insert id="batchDelExamExerciseById">
+		delete from  t_exam_exercise where id in
+		<foreach collection="exerciseIds" item="item" index="index" separator="," open="(" close=")">
+			#{item}
+		</foreach>
+	</insert>
+
+	<update id="updateSortSub">
+		update t_exam_exercise set ordinal=ordinal-1
+		<!-- 		(ordinal > #{srcIndex} and ordinal <= #{tarIndex}) -->
+		where exam_id = #{examId} and (ordinal > #{srcIndex} and ordinal &lt;= #{tarIndex})
+	</update>
+
+	<update id="updateSortAdd">
+		update t_exam_exercise set ordinal=ordinal+1
+<!-- 		(ordinal < #{srcIndex} and ordinal >= #{tarIndex}) -->
+		where exam_id = #{examId} and (ordinal &lt; #{srcIndex} and ordinal &gt;= #{tarIndex})
+	</update>
+
+	<update id="updateOrderById">
+		update t_exam_exercise set ordinal= #{tarIndex}
+		where id=#{id}
+	</update>
+
+	<update id="updateScore">
+		update t_exam_exercise set score = #{score} where exercise_id = #{exerciseId} and exam_id = #{examId}
+	</update>
+</mapper>

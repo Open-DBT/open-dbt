@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.highgo.opendbt.catalogue.mapper.TCatalogueAuthClassMapper">
+
+    <resultMap id="BaseResultMap" type="com.highgo.opendbt.catalogue.domain.entity.TCatalogueAuthClass">
+        <id property="id" column="id" jdbcType="INTEGER"/>
+        <result property="courseId" column="course_id" jdbcType="INTEGER"/>
+        <result property="catalogueId" column="catalogue_id" jdbcType="INTEGER"/>
+        <result property="catalogueName" column="catalogue_name" jdbcType="VARCHAR"/>
+        <result property="classId" column="class_id" jdbcType="INTEGER"/>
+        <result property="authType" column="auth_type" jdbcType="VARCHAR"/>
+        <result property="className" column="class_name" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,course_id,catalogue_id,
+        catalogue_name,class_id,auth_type,class_name
+    </sql>
+
+
+    <select id="queryVisibility" resultType="int">
+        SELECT
+            stu."id"
+        FROM
+            t_catalogue_auth_stu stu
+        WHERE
+            stu.catalogue_id = #{catalogueId}
+            AND stu.course_id = #{courseId}
+            AND stu.user_id = #{userId}
+            AND stu.del_flag = 0
+            AND stu.class_id IN (
+            SELECT
+                auth.class_id
+            FROM
+                t_catalogue_auth_class auth
+            WHERE
+                auth.class_id IN (
+                SELECT
+                    cl."id"
+                FROM
+                    t_class cl
+                    LEFT JOIN t_class_stu s ON s.sclass_id = cl.ID
+                WHERE
+                    s.user_id = #{userId}
+                    AND cl.course_id = #{courseId}
+                    AND cl.class_is_open = 1
+                    AND cl.delete_flag = 0
+                )
+                AND auth.catalogue_id = #{catalogueId}
+                AND auth.course_id = #{courseId}
+            )
+	</select>
+</mapper>

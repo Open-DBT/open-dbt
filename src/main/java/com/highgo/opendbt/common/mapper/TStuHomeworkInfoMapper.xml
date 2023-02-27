@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.highgo.opendbt.homework.mapper.TStuHomeworkInfoMapper">
+
+    <resultMap id="BaseResultMap" type="com.highgo.opendbt.homework.domain.model.TStuHomeworkInfoVO">
+            <result property="exerciseId" column="exercise_id" jdbcType="INTEGER"/>
+            <result property="exerciseScore" column="exercise_score" jdbcType="DOUBLE"/>
+            <result property="exerciseActualScore" column="exercise_actual_score" jdbcType="DOUBLE"/>
+            <result property="exerciseResult" column="exercise_result" jdbcType="VARCHAR"/>
+            <result property="isCorrect" column="is_correct" jdbcType="INTEGER"/>
+            <result property="exerciseType" column="exercise_type" jdbcType="INTEGER"/>
+            <result property="exerciseOrder" column="exercise_order" jdbcType="INTEGER"/>
+            <result property="modelId" column="model_id" jdbcType="INTEGER"/>
+            <association property="exercise"  select="com.highgo.opendbt.exercise.mapper.TNewExerciseMapper.getExerciseById"
+                         column="{exerciseId=exercise_id,modelId=model_id}"/>
+    </resultMap>
+    <resultMap id="UnAnswerBaseResultMap" type="com.highgo.opendbt.homework.domain.model.TStuHomeworkInfoVO">
+        <result property="exerciseId" column="exercise_id" jdbcType="INTEGER"/>
+        <result property="exerciseScore" column="exercise_score" jdbcType="DOUBLE"/>
+        <result property="exerciseActualScore" column="exercise_actual_score" jdbcType="DOUBLE"/>
+        <result property="exerciseResult" column="exercise_result" jdbcType="VARCHAR"/>
+        <result property="isCorrect" column="is_correct" jdbcType="INTEGER"/>
+        <result property="exerciseType" column="exercise_type" jdbcType="INTEGER"/>
+        <result property="exerciseOrder" column="exercise_order" jdbcType="INTEGER"/>
+        <result property="modelId" column="model_id" jdbcType="INTEGER"/>
+        <association property="exercise"  select="com.highgo.opendbt.exercise.mapper.TNewExerciseMapper.getExerciseByIdUnAnswer"
+                     column="{exerciseId=exercise_id,modelId=model_id}"/>
+    </resultMap>
+    <resultMap id="StudentHomeWorkInfoResultMap" type="com.highgo.opendbt.homework.domain.entity.TStuHomeworkInfo">
+        <id property="id" column="id" jdbcType="INTEGER"/>
+        <result property="courseId" column="course_id" jdbcType="INTEGER"/>
+        <result property="homeworkId" column="homework_id" jdbcType="INTEGER"/>
+        <result property="homeworkName" column="homework_name" jdbcType="VARCHAR"/>
+        <result property="modelId" column="model_id" jdbcType="INTEGER"/>
+        <result property="modelName" column="model_name" jdbcType="VARCHAR"/>
+        <result property="studentId" column="student_id" jdbcType="INTEGER"/>
+        <result property="studentName" column="student_name" jdbcType="VARCHAR"/>
+        <result property="studentCode" column="student_code" jdbcType="VARCHAR"/>
+        <result property="classId" column="class_id" jdbcType="INTEGER"/>
+        <result property="className" column="class_name" jdbcType="VARCHAR"/>
+        <result property="exerciseId" column="exercise_id" jdbcType="INTEGER"/>
+        <result property="exerciseType" column="exercise_type" jdbcType="INTEGER"/>
+        <result property="exerciseScore" column="exercise_score" jdbcType="DOUBLE"/>
+        <result property="exerciseActualScore" column="exercise_actual_score" jdbcType="INTEGER"/>
+        <result property="exerciseResult" column="exercise_result" jdbcType="VARCHAR"/>
+        <result property="isCorrect" column="is_correct" jdbcType="INTEGER"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="createUser" column="create_user" jdbcType="INTEGER"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="updateUser" column="update_user" jdbcType="INTEGER"/>
+        <result property="deleteFlag" column="delete_flag" jdbcType="SMALLINT"/>
+        <result property="deleteTime" column="delete_time" jdbcType="TIMESTAMP"/>
+        <result property="deleteUser" column="delete_user" jdbcType="INTEGER"/>
+        <collection property="exerciseInfoList" ofType="com.highgo.opendbt.exercise.domain.entity.TExerciseInfo"
+                    select="com.highgo.opendbt.exercise.mapper.TExerciseInfoMapper.getExerciseInfo" column="exercise_id"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        id,course_id,homework_id,
+        homework_name,model_id,model_name,
+        student_id,student_name,student_code,
+        class_id,class_name,exercise_id,
+        exercise_score,exercise_result,is_correct,
+        create_time,create_user,update_time,
+        update_user,delete_flag,delete_time,
+        delete_user
+    </sql>
+    <select id="getHomeworkInfos" resultMap="BaseResultMap">
+        select
+            info.*,
+            ex.exercise_score  as exercise_actual_score,
+            ex.exercise_type as exercise_type,
+            ex.exercise_order as exercise_order
+        from
+            t_stu_homework_info info
+            left join t_model_exercise ex
+            on info.model_id=ex.model_id
+            and info.exercise_id=ex.exercise_id
+            where homework_id=#{homeworkId}
+            and student_id=#{studentId}
+    </select>
+    <select id="getHomeworkInfoAndExercise" resultMap="StudentHomeWorkInfoResultMap">
+        select
+         	e.exercise_score exercise_actual_score,e.exercise_type,
+            e.exercise_style,
+            ex.standard_answser,
+            w.ignore_case,
+            w.unselected_given,
+            h.*
+        from
+            t_stu_homework_info h
+        join t_model_exercise e on
+            h.model_id = e.model_id
+            and h.exercise_id = e.exercise_id
+        join t_new_exercise ex on
+            h.exercise_id = ex.id
+        join t_homework w on
+            h.homework_id = w.id
+        where
+            h.delete_flag = 0
+            and e.delete_flag = 0
+            and ex.delete_flag=0
+            and w.delete_flag = 0
+            and h.student_id = #{studentId}
+            and h.homework_id = #{homeworkId}
+            and h.exercise_id = #{exerciseId}
+
+    </select>
+    <select id="review" resultMap="BaseResultMap">
+        select info.model_id,info.exercise_id,info.exercise_score,info.exercise_result,info.is_correct, ex.exercise_score  as exercise_actual_score,
+            ex.exercise_type,ex.exercise_order
+            from t_stu_homework_info info
+            left join t_model_exercise ex
+            on info.model_id=ex.model_id
+            and info.exercise_id=ex.exercise_id
+            where info.homework_id=#{homeworkId}
+            and info.student_id=#{studentId}
+            and info.delete_flag=0
+            order by ex.exercise_order asc
+    </select>
+
+    <select id="UnAnswerreview" resultMap="UnAnswerBaseResultMap">
+        select info.model_id,info.exercise_id,info.exercise_score,info.exercise_result,info.is_correct, ex.exercise_score  as exercise_actual_score,
+            ex.exercise_type,ex.exercise_order
+            from t_stu_homework_info info
+            left join t_model_exercise ex
+            on info.model_id=ex.model_id
+            and info.exercise_id=ex.exercise_id
+            where info.homework_id=#{homeworkId}
+            and info.student_id=#{studentId}
+            and info.delete_flag=0
+            order by ex.exercise_order asc
+    </select>
+</mapper>

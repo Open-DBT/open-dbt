@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.highgo.opendbt.homework.mapper.THomeworkMapper">
+
+    <resultMap id="BaseResultMap" type="com.highgo.opendbt.homework.domain.entity.THomework">
+        <id property="id" column="id" jdbcType="INTEGER"/>
+        <result property="courseId" column="course_id" jdbcType="INTEGER"/>
+        <result property="homeworkName" column="homework_name" jdbcType="VARCHAR"/>
+        <result property="modelId" column="model_id" jdbcType="INTEGER"/>
+        <result property="modelName" column="model_name" jdbcType="VARCHAR"/>
+        <result property="startTime" column="start_time" jdbcType="TIMESTAMP"/>
+        <result property="endTime" column="end_time" jdbcType="TIMESTAMP"/>
+        <result property="allowAfter" column="allow_after" jdbcType="INTEGER"/>
+        <result property="passMark" column="pass_mark" jdbcType="SMALLINT"/>
+        <result property="score" column="score" jdbcType="DOUBLE"/>
+        <result property="redoTimes" column="redo_times" jdbcType="INTEGER"/>
+        <result property="maxScore" column="max_score" jdbcType="INTEGER"/>
+        <result property="viewTime" column="view_time" jdbcType="INTEGER"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="createUser" column="create_user" jdbcType="INTEGER"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="updateUser" column="update_user" jdbcType="INTEGER"/>
+        <result property="deleteFlag" column="delete_flag" jdbcType="SMALLINT"/>
+        <result property="deleteTime" column="delete_time" jdbcType="TIMESTAMP"/>
+        <result property="deleteUser" column="delete_user" jdbcType="INTEGER"/>
+        <result property="ignoreCase" column="ignore_case" jdbcType="INTEGER"/>
+        <result property="unselectedGiven" column="unselected_given" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,course_id,homework_name,
+        model_id,model_name,start_time,
+        end_time,allow_after,pass_mark,
+        score,redo_times,max_score,
+        view_time,create_time,create_user,
+        update_time,update_user,delete_flag,
+        delete_time,delete_user,ignore_case,
+        unselected_given
+    </sql>
+    <select id="getHomeWorkLilst" resultType="com.highgo.opendbt.homework.domain.entity.THomework">
+        select
+            w.*,
+            d.class_name,
+            d.class_id,
+            h.complete_num,
+            h.uncomplete_num,
+            h.total_num
+            from
+            t_homework w
+           right join t_homework_distribution d on
+            w.id = d.homework_id
+            join (
+            select
+            homework_id,
+            class_id,
+            sum (
+            case
+            when check_status = 1 then 1
+            else 0
+            end
+            ) "complete_num",
+            sum (
+            case
+            when check_status = 2 then 1
+            else 0
+            end
+            ) "uncomplete_num",
+            count( 1 ) "total_num"
+            from
+            t_stu_homework
+            where
+            delete_flag = 0
+            group by
+            homework_id,class_id
+            ) h on
+            d.homework_id = h.homework_id
+            and d.class_id=h.class_id
+        where
+            w.delete_flag = 0
+            and d.delete_flag = 0
+            and w.course_id=#{param.courseId}
+            <if test="param.homeworkName!=null and param.homeworkName!=''">
+                and w.homework_name like '%${param.homeworkName}%'
+            </if>
+        <if test="param.status != null  and param.status !=0 and param.status != ''">
+
+            <if test="param.status ==1">
+                and current_timestamp &lt; w.start_time
+            </if>
+            <if test="param.status ==2">
+                and current_timestamp &gt; w.start_time and current_timestamp &lt; w.end_time
+            </if>
+            <if test="param.status ==3">
+                and current_timestamp &gt; w.end_time
+            </if>
+        </if>
+        <if test="param.classId != null and param.classId != ''">
+            and d.class_id=#{param.classId}
+        </if>
+
+    </select>
+</mapper>

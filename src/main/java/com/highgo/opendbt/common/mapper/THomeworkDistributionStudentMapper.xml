@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.highgo.opendbt.homework.mapper.THomeworkDistributionStudentMapper">
+
+    <resultMap id="BaseResultMap" type="com.highgo.opendbt.homework.domain.entity.THomeworkDistributionStudent">
+            <id property="id" column="id" jdbcType="INTEGER"/>
+            <result property="distributionId" column="distribution_id" jdbcType="INTEGER"/>
+            <result property="homeworkId" column="homework_id" jdbcType="INTEGER"/>
+            <result property="studentId" column="student_id" jdbcType="INTEGER"/>
+            <result property="studentName" column="student_name" jdbcType="VARCHAR"/>
+            <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+            <result property="createUser" column="create_user" jdbcType="INTEGER"/>
+            <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+            <result property="updateUser" column="update_user" jdbcType="INTEGER"/>
+            <result property="deleteFlag" column="delete_flag" jdbcType="SMALLINT"/>
+            <result property="deleteTime" column="delete_time" jdbcType="TIMESTAMP"/>
+            <result property="deleteUser" column="delete_user" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,distribution_id,homework_id,
+        student_id,student_name,create_time,
+        create_user,update_time,update_user,
+        delete_flag,delete_time,delete_user
+    </sql>
+</mapper>

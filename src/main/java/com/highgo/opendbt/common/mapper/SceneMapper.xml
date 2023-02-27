@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.highgo.opendbt.course.mapper.SceneMapper">
+
+	<resultMap id="BaseResultMap" type="com.highgo.opendbt.course.domain.model.Scene">
+		<id column="id" property="sceneId" jdbcType="INTEGER" />
+		<result column="course_id" property="courseId" jdbcType="INTEGER" />
+		<result column="scene_name" property="sceneName" jdbcType="VARCHAR" />
+		<result column="scene_desc" property="sceneDesc" jdbcType="VARCHAR" />
+		<result column="init_shell" property="initShell" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<select id="getScene" resultMap="BaseResultMap">
+		select
+			t_scene.id,
+			t_scene.course_id,
+			t_scene.scene_name,
+			t_scene.scene_desc,
+			t_scene.init_shell
+		from t_scene
+		where t_scene.course_id = #{courseId} and t_scene.delete_flag = 0
+		order by t_scene.id desc
+	</select>
+
+	<select id="getSceneASC" resultMap="BaseResultMap">
+		select
+			t_scene.id,
+			t_scene.course_id,
+			t_scene.scene_name,
+			t_scene.scene_desc,
+			t_scene.init_shell
+		from t_scene
+		where t_scene.course_id = #{courseId} and t_scene.delete_flag = 0
+		order by t_scene.id asc
+	</select>
+
+	<select id="getSceneDetail" resultMap="BaseResultMap">
+		select
+			t_scene.id,
+			t_scene.course_id,
+			t_scene.scene_name,
+			t_scene.scene_desc,
+			t_scene.init_shell
+		from t_scene
+		where t_scene.id = #{sceneId}
+	</select>
+
+	<insert id="addScene" useGeneratedKeys="true" keyProperty="sceneId">
+		insert into t_scene
+			(course_id, scene_name, scene_desc, init_shell)
+		values
+			(#{courseId}, #{sceneName}, #{sceneDesc}, #{initShell})
+	</insert>
+
+	<insert id="addCopyScene" useGeneratedKeys="true" keyProperty="sceneId">
+		insert into t_scene
+			(course_id, scene_name, scene_desc, init_shell, parent_id)
+		values
+			(#{courseId}, #{sceneName}, #{sceneDesc}, #{initShell}, #{parentId})
+	</insert>
+
+	<update id="updateScene">
+		update t_scene
+		<set>
+			<if test="sceneName != null">
+	            scene_name = #{sceneName},
+	        </if>
+	        <if test="sceneDesc != null">
+	            scene_desc = #{sceneDesc},
+	        </if>
+	        <if test="initShell != null">
+	            init_shell = #{initShell},
+	        </if>
+		</set>
+		where id = #{sceneId}
+	</update>
+
+	<!-- <delete id="deleteScene">
+		delete from t_scene where id = #{sceneId}
+	</delete> -->
+	<update id="deleteScene">
+		update t_scene set delete_flag = 1, delete_time = current_timestamp where id = #{sceneId}
+	</update>
+
+	<delete id="deleteSceneByCourseId">
+		delete from t_scene where course_id = #{courseId}
+	</delete>
+
+</mapper>

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration debug="true">
+    <!-- 日志文件名 -->
+    <property name="LOG_FILE" value="sdnuLog" />
+    <!-- 日志文件路径 -->
+    <property name="LOG_PATH" value="../sdnlog/log" />
+    <!-- 错误日志文件路径 -->
+    <property name="LOG_PATH2" value="..sdnlog/errorLog" />
+    <!-- 控制台日志输出格式 -->
+    <property name="LOG_PATTERN_CONSOLE" value="%yellow(%d{yyyy-MM-dd HH:mm:ss}) [%thread] %highlight(%-5level) %green(%logger{50}) --> %msg%n" />
+    <!-- 文件日志输出格式 -->
+    <property name="LOG_PATTERN_FILE" value="%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{50} --> %msg%n" />
+
+    <!-- 控制台日志：输出全部日志到控制台 -->
+    <appender name="consoleLog" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <Pattern>${LOG_PATTERN_CONSOLE}</Pattern>
+        </encoder>
+    </appender>
+
+    <!-- 文件日志：输出全部日志到文件 -->
+    <appender name="fileLog" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <encoder>
+            <pattern>${LOG_PATTERN_FILE}</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- 每天的文件日志 -->
+            <fileNamePattern>${LOG_PATH}/${LOG_FILE}-%d{yyyy-MM-dd}.log</fileNamePattern>
+            <!-- 日志文件保存7天，超过7天的自动删除 -->
+            <maxHistory>7</maxHistory>
+        </rollingPolicy>
+    </appender>
+
+    <!-- 错误日志：用于将错误日志输出到独立文件 -->
+    <appender name="errorFileLog" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <encoder>
+            <pattern>${LOG_PATTERN_FILE}</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH2}/${LOG_FILE}-error-%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>7</maxHistory>
+        </rollingPolicy>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>WARN</level>
+        </filter>
+    </appender>
+
+    <!-- 设置日志级别，及需要记录日志的类 -->
+    <root>
+        <level value="INFO" />
+        <appender-ref ref="consoleLog" />
+        <appender-ref ref="fileLog" />
+        <appender-ref ref="errorFileLog" />
+    </root>
+</configuration>
+
+

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.highgo.opendbt.homeworkmodel.mapper.TModelExerciseTypeMapper">
+
+    <resultMap id="BaseResultMap" type="com.highgo.opendbt.homeworkmodel.domain.entity.TModelExerciseType">
+            <id property="id" column="id" jdbcType="INTEGER"/>
+            <result property="modelId" column="model_id" jdbcType="INTEGER"/>
+            <result property="exerciseType" column="exercise_type" jdbcType="INTEGER"/>
+            <result property="sortNum" column="sort_num" jdbcType="INTEGER"/>
+            <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+            <result property="updateUser" column="update_user" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,model_id,exercise_type,
+        sort_num,update_time,update_user
+    </sql>
+</mapper>

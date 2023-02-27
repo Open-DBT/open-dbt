@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.highgo.opendbt.system.mapper.ResourceInfoMapper">
+
+	<resultMap id="BaseResultMap" type="com.highgo.opendbt.system.domain.model.ResourceInfo">
+		<id column="id" property="resourceId" jdbcType="INTEGER" />
+		<result column="parent_id" property="parentId" jdbcType="INTEGER" />
+		<result column="parent_name" property="parentName" jdbcType="VARCHAR" />
+		<result column="resource_name" property="resourceName" jdbcType="VARCHAR" />
+		<result column="resource_desc" property="resourceDesc" jdbcType="VARCHAR" />
+		<result column="resource_key" property="resourceKey" jdbcType="VARCHAR" />
+		<result column="resource_type" property="resourceType" jdbcType="INTEGER" />
+		<result column="resource_path" property="resourcePath" jdbcType="VARCHAR" />
+		<result column="is_delete" property="isDelete" jdbcType="INTEGER" />
+		<result column="icon" property="icon" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<select id="getResource" resultMap="BaseResultMap">
+		select
+			t_sys_resource.id,
+			t_sys_resource.parent_id,
+			ljtsr.resource_name as parent_name,
+			t_sys_resource.resource_name,
+			t_sys_resource.resource_desc,
+			t_sys_resource.resource_key,
+			t_sys_resource.resource_type,
+			t_sys_resource.resource_path,
+			t_sys_resource.is_delete,
+			t_sys_resource.icon
+		from t_sys_resource
+		left join t_sys_resource ljtsr on ljtsr.id = t_sys_resource.parent_id
+		where 1 = 1 and t_sys_resource.is_delete = 0
+		<if test="parentName != null and parentName != ''">
+            and ljtsr.resource_name like '%${parentName}%'
+        </if>
+        <if test="resourceName != null and resourceName != ''">
+            and t_sys_resource.resource_name like '%${resourceName}%'
+        </if>
+        order by t_sys_resource.sort
+		<!-- order by t_sys_resource.parent_id, t_sys_resource.id -->
+	</select>
+
+	<select id="getResourceByRoleId" resultMap="BaseResultMap">
+		select
+			t_sys_resource.id,
+			t_sys_resource.parent_id,
+			t_sys_resource.resource_name,
+			t_sys_resource.resource_desc,
+			t_sys_resource.resource_key,
+			t_sys_resource.resource_type,
+			t_sys_resource.resource_path,
+			t_sys_resource.is_delete,
+			t_sys_resource.icon
+		from t_sys_resource
+		left join t_sys_role_resource on t_sys_resource.id = t_sys_role_resource.resource_id
+		where t_sys_role_resource.role_id = #{roleId} and t_sys_resource.is_delete = 0
+		order by t_sys_resource.sort
+		<!-- order by t_sys_resource.id -->
+	</select>
+
+</mapper>

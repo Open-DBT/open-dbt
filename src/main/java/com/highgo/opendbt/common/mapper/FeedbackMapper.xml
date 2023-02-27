@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.highgo.opendbt.feedback.mapper.FeedbackMapper">
+
+	<resultMap id="BaseResultMap" type="com.highgo.opendbt.feedback.model.Feedback">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="content" property="content" jdbcType="VARCHAR" />
+		<result column="mobile" property="mobile" jdbcType="VARCHAR" />
+		<result column="creator" property="creator" jdbcType="INTEGER" />
+		<result column="create_time" property="createTime" jdbcType="VARCHAR" />
+
+		<association property="user" javaType="com.highgo.opendbt.system.domain.entity.UserInfo">
+			<id column="id" property="userId" jdbcType="INTEGER" />
+			<result column="user_name" property="userName" jdbcType="VARCHAR" />
+			<result column="password" property="password" jdbcType="VARCHAR" />
+			<result column="code" property="code" jdbcType="VARCHAR" />
+			<result column="sex" property="sex" jdbcType="INTEGER" />
+			<result column="mobile" property="mobile" jdbcType="VARCHAR" />
+			<result column="avatar" property="avatar" jdbcType="VARCHAR" />
+			<result column="nick_name" property="nickName" jdbcType="VARCHAR" />
+			<result column="english_name" property="englishName" jdbcType="VARCHAR" />
+			<result column="creator" property="creator" jdbcType="INTEGER" />
+			<result column="create_time" property="createTime" jdbcType="VARCHAR" />
+			<result column="operator" property="operator" jdbcType="INTEGER" />
+			<result column="update_time" property="updateTime" jdbcType="VARCHAR" />
+			<result column="is_stop" property="isStop" jdbcType="INTEGER" />
+			<result column="role_type" property="roleType" jdbcType="INTEGER" />
+			<result column="school" property="school" jdbcType="VARCHAR" />
+			<result column="major" property="major" jdbcType="VARCHAR" />
+			<result column="mail" property="mail" jdbcType="VARCHAR" />
+		</association>
+	</resultMap>
+
+
+	<insert id="add" useGeneratedKeys="true" keyProperty="id">
+		insert into t_feedback
+			(content, mobile, creator, create_time)
+		values
+			(#{content}, #{mobile}, #{creator}, to_timestamp(#{createTime}, 'yyyy-MM-DD hh24:mi:ss'))
+	</insert>
+
+	<select id="getFeedbackList" resultMap="BaseResultMap">
+		select tf.*,tsu.*
+		from t_feedback tf
+		left join t_sys_user tsu on tf.creator = tsu.id
+        order by tf.create_time desc
+	</select>
+
+</mapper>

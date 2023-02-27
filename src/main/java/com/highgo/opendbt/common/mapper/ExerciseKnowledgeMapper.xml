@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.highgo.opendbt.course.mapper.ExerciseKnowledgeMapper">
+
+	<resultMap id="BaseResultMap" type="com.highgo.opendbt.course.domain.entity.ExerciseKnowledge">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="exercise_id" property="exerciseId" jdbcType="INTEGER" />
+		<result column="knowledge_id" property="knowledgeId" jdbcType="INTEGER" />
+		<result column="course_id" property="courseId" jdbcType="INTEGER" />
+	</resultMap>
+
+	<select id="getExerciseKnowledgeByCourseId" resultMap="BaseResultMap">
+		select
+			t_exercise_knowledge.id,
+			t_exercise_knowledge.course_id,
+			t_exercise_knowledge.exercise_id,
+			t_exercise_knowledge.knowledge_id
+		from t_exercise_knowledge
+		where t_exercise_knowledge.course_id = #{courseId}
+		order by t_exercise_knowledge.id
+	</select>
+
+	<select id="getExerciseKnowledgeByExerciseId" resultMap="BaseResultMap">
+		select
+			t_exercise_knowledge.id,
+			t_exercise_knowledge.course_id,
+			t_exercise_knowledge.exercise_id,
+			t_exercise_knowledge.knowledge_id
+		from t_exercise_knowledge
+		where t_exercise_knowledge.exercise_id = #{exerciseId}
+		order by t_exercise_knowledge.id
+	</select>
+
+	<insert id="addExerciseKnowledgeArray">
+		insert into t_exercise_knowledge
+			(exercise_id, knowledge_id, course_id)
+		values
+		<foreach collection="knowledgeIds" item="item" index="index" separator=",">
+			(#{exerciseId}, #{item}, #{courseId})
+		</foreach>
+	</insert>
+
+	<insert id="addExerciseKnowledgeList">
+		insert into t_exercise_knowledge
+			(exercise_id, knowledge_id, course_id)
+		values
+		<foreach collection="list" item="item" index="index" separator=",">
+			(#{item.exerciseId}, #{item.knowledgeId}, #{item.courseId})
+		</foreach>
+	</insert>
+
+	<delete id="deleteByExerciseId">
+		delete from t_exercise_knowledge where exercise_id = #{exerciseId}
+	</delete>
+
+	<delete id="deleteByKnowledgeId">
+		delete from t_exercise_knowledge where knowledge_id = #{knowledgeId}
+	</delete>
+
+	<delete id="deleteByCourseId">
+		delete from t_exercise_knowledge where course_id = #{courseId}
+	</delete>
+
+</mapper>

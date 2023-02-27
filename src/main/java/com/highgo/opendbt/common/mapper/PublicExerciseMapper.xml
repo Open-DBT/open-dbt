@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.highgo.opendbt.publicLibrary.mapper.PublicExerciseMapper">
+
+	<resultMap id="BaseResultMap" type="com.highgo.opendbt.publicLibrary.model.PublicExercise">
+		<id column="id" property="exerciseId" jdbcType="INTEGER" />
+		<result column="scene_id" property="sceneId" jdbcType="INTEGER" />
+		<result column="scene_name" property="sceneName" jdbcType="VARCHAR" />
+		<result column="exercise_name" property="exerciseName" jdbcType="VARCHAR" />
+		<result column="exercise_desc" property="exerciseDesc" jdbcType="VARCHAR" />
+		<result column="exercise_analysis" property="exerciseAnalysis" jdbcType="VARCHAR" />
+		<result column="answer" property="answer" jdbcType="VARCHAR" />
+		<result column="creator" property="creator" jdbcType="INTEGER" />
+		<result column="creator_name" property="creatorName" jdbcType="VARCHAR" />
+		<result column="create_time" property="createTime" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<select id="getPublicExerciseList" resultMap="BaseResultMap">
+		select
+			t_public_exercise.id,
+			t_public_exercise.scene_id,
+			t_public_scene.scene_name,
+			t_public_exercise.exercise_name,
+			t_public_exercise.creator,
+			t_sys_user.user_name as creator_name,
+			t_public_exercise.create_time
+		from t_public_exercise
+		left join t_public_scene on t_public_scene.id = t_public_exercise.scene_id
+		left join t_sys_user on t_sys_user.id = t_public_exercise.creator
+		where t_public_exercise.delete_flag = 0
+		<if test="exerciseDesc != null and exerciseDesc != ''">
+	        and (t_public_exercise.exercise_name like '%${exerciseDesc}%' or t_public_exercise.exercise_desc like '%${exerciseDesc}%')
+	    </if>
+	    <if test="sceneId != null and sceneId != -1">
+	        and t_public_exercise.scene_id = #{sceneId}
+	    </if>
+		order by t_public_exercise.id desc
+	</select>
+
+	<select id="getPublicExerciseDetail" resultMap="BaseResultMap">
+		select
+			t_public_exercise.id,
+			t_public_exercise.scene_id,
+			t_public_scene.scene_name,
+			t_public_exercise.exercise_name,
+			t_public_exercise.exercise_desc,
+			t_public_exercise.answer
+		from t_public_exercise
+		left join t_public_scene on t_public_scene.id = t_public_exercise.scene_id
+		where t_public_exercise.delete_flag = 0
+		order by t_public_exercise.id desc
+	</select>
+
+	<select id="getPublicExerciseInfo" resultMap="BaseResultMap">
+		select
+			t_public_exercise.id,
+			t_public_exercise.scene_id,
+			t_public_exercise.exercise_name,
+			t_public_exercise.exercise_desc,
+			t_public_exercise.exercise_analysis,
+			t_public_exercise.answer
+		from t_public_exercise
+		where t_public_exercise.id = #{exerciseId}
+	</select>
+
+	<insert id="addExercise" useGeneratedKeys="true" keyProperty="exerciseId">
+		insert into t_public_exercise
+			(scene_id, exercise_name, exercise_desc, exercise_analysis, answer, creator, create_time)
+		values
+			(#{sceneId}, #{exerciseName}, #{exerciseDesc}, #{exerciseAnalysis}, #{answer}, #{creator}, to_timestamp(#{createTime}, 'yyyy-MM-DD hh24:mi:ss'))
+	</insert>
+
+	<update id="updateExercise">
+		update t_public_exercise
+		<set>
+			<if test="sceneId != -1">
+	            scene_id = #{sceneId},
+	        </if>
+	        <if test="exerciseName != null">
+	            exercise_name = #{exerciseName},
+	        </if>
+	        <if test="exerciseDesc != null">
+	            exercise_desc = #{exerciseDesc},
+	        </if>
+	        <if test="exerciseAnalysis != null">
+	            exercise_analysis = #{exerciseAnalysis},
+	        </if>
+	        <if test="answer != null">
+	            answer = #{answer}
+	        </if>
+		</set>
+		where id = #{exerciseId}
+	</update>
+
+	<update id="deleteExercise">
+		update t_public_exercise set delete_flag = 1, delete_time = current_timestamp where id = #{exerciseId}
+	</update>
+
+</mapper>

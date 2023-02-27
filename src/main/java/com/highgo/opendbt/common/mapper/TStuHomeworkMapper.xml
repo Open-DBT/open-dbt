@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.highgo.opendbt.homework.mapper.TStuHomeworkMapper">
+
+    <resultMap id="BaseResultMap" type="com.highgo.opendbt.homework.domain.model.TStuHomeworkVO">
+        <id property="id" column="id" jdbcType="INTEGER"/>
+        <result property="homeworkId" column="homework_id" jdbcType="INTEGER"/>
+        <result property="studentId" column="student_id" jdbcType="INTEGER"/>
+        <result property="studentName" column="student_name" jdbcType="VARCHAR"/>
+        <result property="classId" column="class_id" jdbcType="INTEGER"/>
+        <result property="className" column="class_name" jdbcType="VARCHAR"/>
+        <result property="score" column="score" jdbcType="INTEGER"/>
+        <result property="homeworkStatus" column="homework_status" jdbcType="INTEGER"/>
+        <result property="checkStatus" column="check_status" jdbcType="INTEGER"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="submitTime" column="submit_time" jdbcType="TIMESTAMP"/>
+        <result property="approvalTime" column="approval_time" jdbcType="TIMESTAMP"/>
+        <result property="endTime" column="end_time" jdbcType="TIMESTAMP"/>
+        <result property="createUser" column="create_user" jdbcType="INTEGER"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="updateUser" column="update_user" jdbcType="INTEGER"/>
+        <result property="deleteFlag" column="delete_flag" jdbcType="SMALLINT"/>
+        <result property="deleteTime" column="delete_time" jdbcType="TIMESTAMP"/>
+        <result property="deleteUser" column="delete_user" jdbcType="INTEGER"/>
+        <result property="courseId" column="course_id" jdbcType="INTEGER"/>
+        <result property="studentCode" column="student_code" jdbcType="VARCHAR"/>
+        <result property="comments" column="comments" jdbcType="VARCHAR"/>
+        <collection property="stuHomeworkInfos"
+                    select="com.highgo.opendbt.homework.mapper.TStuHomeworkInfoMapper.getHomeworkInfos"
+                    column="{studentId=student_id,homeworkId=homework_id}"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,homework_id,student_id,submit_time,approval_time,comments,end_time,
+        student_name,class_id,class_name,
+        score,homework_status,check_status,
+        create_time,create_user,update_time,
+        update_user,delete_flag,delete_time,
+        delete_user,course_id,student_code
+    </sql>
+    <select id="getApprovalList" resultType="com.highgo.opendbt.homework.domain.entity.TStuHomework">
+        select
+        h.id,
+        s.user_name as student_name ,
+        s.id as student_id ,
+        s.code as student_code,
+        h.submit_time,
+        h.homework_status,
+        h.check_status,
+        h.score,
+        h.update_user,
+        h.homework_id,
+        h.class_id,
+        h.class_name,
+        h.course_id,
+        h.end_time,
+        s1.user_name as approval_user,
+        w.start_time as homework_start_time,
+        w.end_time as homework_end_time
+
+        from
+        t_stu_homework h
+        join t_homework w
+        on h.homework_id=w.id
+        join t_sys_user s on
+        h.student_id = s.id
+        left join t_sys_user s1 on
+        h.approval_user_id = s1.id
+        where
+        h.delete_flag=0
+        and homework_id = #{param.homeworkId}
+        <if test="param.studentCode !=null and param.studentCode!=''">
+            and s.code = #{param.studentCode}
+        </if>
+        <if test="param.studentName !=null and param.studentName!=''">
+            and s.user_name = #{param.studentName}
+        </if>
+        <if test="param.classId !=null ">
+            and h.class_id = #{param.classId}
+        </if>
+        <if test="param.homeworkStatus !=null ">
+            <if test="param.homeworkStatus ==2">
+                and h.homework_status != 1
+            </if>
+            <if test="param.homeworkStatus ==1">
+                and h.homework_status = 1
+            </if>
+
+        </if>
+    </select>
+    <select id="getApprovalCount" resultType="com.highgo.opendbt.homework.domain.model.ApprovalCountVO">
+        select
+        COUNT ( 1 ) AS total_num,
+        SUM ( CASE homework_status WHEN 1 THEN 1 ELSE 0 END ) AS submit_num,
+        SUM ( CASE homework_status WHEN 2 THEN 1 ELSE 0 END ) AS unsubmit_num
+        from
+        t_stu_homework h
+        join t_sys_user s on
+        h.student_id = s.id
+        left join t_sys_user s1 on
+        h.update_user = s1.id
+        where
+
+        h.delete_flag=0
+        and homework_id = #{param.homeworkId}
+        <if test="param.studentCode !=null and param.studentCode!=''">
+            and s.code = #{param.studentCode}
+        </if>
+        <if test="param.studentName !=null and param.studentName!=''">
+            and s.user_name = #{param.studentName}
+        </if>
+        <if test="param.classId !=null ">
+            and h.class_id = #{param.classId}
+        </if>
+
+    </select>
+    <select id="review" resultMap="BaseResultMap">
+        select * from t_stu_homework where delete_flag=0 and homework_id=#{homeworkId} and student_id=#{studentId}
+    </select>
+    <select id="getHomeWrokByStudent" resultType="com.highgo.opendbt.homework.domain.model.HomeWrokByStudent">
+        select
+        h.course_id,
+        h.homework_name,
+        h.id homework_id,
+        h.allow_after,
+        h.start_time,
+        h.view_time,
+        case when s.end_time is null then h.end_time else s.end_time end as end_time,
+        AGE(case when s.end_time is null then h.end_time else s.end_time end,now()) as interval_time,
+        s.student_id,
+        s.homework_status,
+        s.check_status,
+        s.class_id,
+        s.class_name
+        from
+        t_homework h
+        join t_stu_homework s on
+        h.id = s.homework_id
+        where
+        h.delete_flag = 0
+        and s.delete_flag = 0
+        and h.course_id=#{param.courseId}
+        and s.class_id=#{param.classId}
+        and s.student_id=#{param.studentId}
+        <if test="param.homeworkStatus!=null and param.homeworkStatus!=''">
+            and s.homework_status = #{param.homeworkStatus}
+        </if>
+        order by s.create_time desc
+    </select>
+</mapper>
